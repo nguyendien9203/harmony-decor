@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  server:
+    build: ./server
+    container_name: server-service
+    restart: always
+    env_file: ./server/.env
+    depends_on:
+      - mongo
+      - redis
+    ports:
+      - "5050:5050"
+    volumes:
+      - type: bind
+        source: ./server
+        target: /app
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - my_network
+
+  client:
+    build: ./client
+    container_name: client-service
+    restart: always
+    env_file: ./client/.env
+    depends_on:
+      - server
+    ports:
+      - "5173:5173"
+    volumes:
+      - type: bind
+        source: ./client
+        target: /app
+      - /app/node_modules
+    networks:
+      - my_network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo-service
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - my_network
+
+  redis:
+    image: redis:latest
+    container_name: redis-service
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - my_network
+
+networks:
+  my_network:
+
+volumes:
+  mongo_data:
+  redis_data:
