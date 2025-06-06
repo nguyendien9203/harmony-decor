@@ -7,7 +7,6 @@ services:
     restart: always
     env_file: ./server/.env
     depends_on:
-      - mongo
       - redis
     ports:
       - "5050:5050"
@@ -37,17 +36,6 @@ services:
     networks:
       - my_network
 
-  mongo:
-    image: mongo:latest
-    container_name: mongo-service
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - my_network
-
   redis:
     image: redis:latest
     container_name: redis-service
@@ -63,5 +51,4 @@ networks:
   my_network:
 
 volumes:
-  mongo_data:
   redis_data:

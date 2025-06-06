@@ -7,7 +7,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 
 const connectDB = require("./config/db");
-const { connectRedis } = require("./config/redis-client");
+const { connectRedis } = require("./config/redis");
 const cookieParser = require("cookie-parser");
 
 const app = express();
