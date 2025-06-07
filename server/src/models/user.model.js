@@ -36,7 +36,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
       sparse: true,
-      default: null,
     },
     oauthProvider: {
       type: String,

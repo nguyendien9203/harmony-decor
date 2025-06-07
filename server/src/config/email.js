@@ -1,5 +1,5 @@
 const nodeMailer = require("nodemailer");
-const redis = require("redis");
+const { getRedisClient } = require("../config/redis");
 const otp = require("otp-generator");
 require("dotenv").config();
 
@@ -28,23 +28,26 @@ exports.sendEmail = async (to, subject, htmlContent) => {
 };
 
 exports.generateOtp = async (email) => {
-  const otpCode = otp.generate(6, { upperCase: false, specialChars: false });
-  const client = redis.createClient();
+  const otpCode = otp.generate(6, {
+    digits: true,
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
+  const client = getRedisClient();
+  console.log(otpCode);
 
   try {
-    await client.connect();
     await client.setEx(`otp:${email}`, 300, otpCode); // Store OTP with a 5-minute expiration
     console.log(`OTP generated and stored for ${email}`);
     return otpCode;
   } catch (error) {
     console.error(`Failed to generate OTP for ${email}:`, error);
-  } finally {
-    await client.quit();
+    throw error;
   }
 };
 
-exports.sendOtpEmail = async (to) => {
-  const otpCode = await this.generateOtp(to);
+exports.sendOtpEmail = async (email, otpCode) => {
   const htmlContent = `
     <p>Xin chào,</p>
     <p>Bạn vừa yêu cầu mã xác thực (OTP) để thực hiện một hành động quan trọng trên hệ thống của chúng tôi.</p>
@@ -52,7 +55,7 @@ exports.sendOtpEmail = async (to) => {
     <p>Vui lòng sử dụng mã này trong vòng <strong>5 phút</strong> để hoàn tất quá trình xác minh.</p>
     <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này hoặc liên hệ với bộ phận hỗ trợ.</p>
     <p>Trân trọng,<br/>Đội ngũ Hỗ trợ Khách hàng</p>
- `;
+  `;
 
   try {
     await this.sendEmail(
@@ -61,15 +64,9 @@ exports.sendOtpEmail = async (to) => {
       htmlContent
     );
 
-    // Store OTP in Redis with a 5-minute expiration
-    const client = redis.createClient();
-    await client.connect();
-    await client.setEx(`otp:${to}`, 300, otpCode);
-    await client.quit();
-
-    console.log(`OTP sent to ${to} and stored in Redis`);
-    return { success: true, message: `OTP đã được gửi tới ${to}` };
+    return { success: true, message: `OTP đã được gửi tới ${email}` };
   } catch (error) {
-    console.error(`Failed to send OTP email to ${to}:`, error);
+    console.error(`Failed to send OTP email to ${email}:`, error);
+    throw error;
   }
 };
