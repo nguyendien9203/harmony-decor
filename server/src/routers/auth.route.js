@@ -3,6 +3,8 @@ const router = express.Router();
 const authController = require("../controllers/auth.controller");
 const { validateRequest } = require("../middlewares/validateRequest");
 const { body } = require("express-validator");
+const { authenticate } = require("../middlewares/authenticate");
+
 
 // Đăng ký
 router.post(
@@ -27,6 +29,12 @@ router.post(
   validateRequest,
   authController.login
 );
+
+router.post(
+  "/logout",
+  authenticate,
+  authController.logout
+); 
 
 // Gửi OTP quên mật khẩu
 router.post(

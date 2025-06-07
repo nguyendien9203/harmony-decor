@@ -1,173 +1,101 @@
 const Product = require("../models/product.model");
+const { cloudinary } = require("../config/cloudinary");
+const fs = require("fs");
 
-// Create new product
+// Create Product
 exports.createProduct = async (req, res) => {
   try {
-    const { name, description, price, category, images, stock, specifications } = req.body;
-
+    const { name, description, price, status, stock, ratings, createdBy, updatedBy } = req.body;
+    let imageUrl = null;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+        resource_type: "image",
+      });
+      imageUrl = result.secure_url;
+      fs.unlinkSync(req.file.path);
+    }
     const product = new Product({
-      name,
-      description,
-      price,
-      category,
-      images,
-      stock,
-      specifications
+      name, description, price, status, stock, ratings, createdBy, updatedBy,
+      images: imageUrl,
     });
-
     await product.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Product created successfully",
-      data: product
-    });
+    res.status(201).json({ success: true, message: "Tạo sản phẩm thành công", data: product });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error creating product",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Lỗi khi tạo sản phẩm", error: error.message });
   }
 };
 
-// Get all products with pagination and filters
+// Get all products with search, filter, sort, pagination
 exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const category = req.query.category;
-    const search = req.query.search;
-
+    const limit = 6;
+    const { search = "", status, sort } = req.query;
     let query = {};
-    
-    if (category) {
-      query.category = category;
-    }
-
-    // Add search filter if provided
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (status) query.status = status;
+    let sortOption = {};
+    if (sort === "asc") sortOption.price = 1;
+    else if (sort === "desc") sortOption.price = -1;
+    else sortOption.createdAt = -1;
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / limit);
-
     const products = await Product.find(query)
+      .sort(sortOption)
       .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-
+      .limit(limit);
     res.status(200).json({
       success: true,
       data: {
         products,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalProducts,
-          limit
-        }
-      }
+        pagination: { currentPage: page, totalPages, totalProducts, limit },
+      },
+      message: "Lấy danh sách sản phẩm thành công"
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching products",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Lỗi khi lấy danh sách sản phẩm", error: error.message });
   }
 };
 
-// Get single product by ID
+// Get product by ID
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: product
-    });
+    if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
+    res.status(200).json({ success: true, data: product, message: "Lấy chi tiết sản phẩm thành công" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching product",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Lỗi khi lấy chi tiết sản phẩm", error: error.message });
   }
 };
 
-// Update product
+// Update product (ngắn gọn)
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, images, stock, specifications } = req.body;
-    
-    const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found"
+    const updateFields = { ...req.body };
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+        resource_type: "image",
       });
+      updateFields.images = result.secure_url;
+      fs.unlinkSync(req.file.path);
     }
-
-    if (name) product.name = name;
-    if (description) product.description = description;
-    if (price) product.price = price;
-    if (category) product.category = category;
-    if (images) product.images = images;
-    if (stock !== undefined) product.stock = stock;
-    if (specifications) product.specifications = specifications;
-
-    await product.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Product updated successfully",
-      data: product
-    });
+    const product = await Product.findByIdAndUpdate(req.params.id, updateFields, { new: true });
+    if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
+    res.status(200).json({ success: true, message: "Cập nhật sản phẩm thành công", data: product });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error updating product",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Lỗi khi cập nhật sản phẩm", error: error.message });
   }
 };
 
 // Delete product
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found"
-      });
-    }
-
-    await product.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: "Product deleted successfully"
-    });
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
+    res.status(200).json({ success: true, message: "Xóa sản phẩm thành công" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error deleting product",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Lỗi khi xóa sản phẩm", error: error.message });
   }
 };

@@ -1,7 +1,7 @@
 const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const { generateTokens, verifyToken, storeTokensInRedis, removeTokensFromRedis, verifyTokenInRedis } = require("../config/jwt");
-const { sendEmail } = require("../config/email");
+const { sendEmail, generateOtp, sendOtpEmail } = require("../config/email");
 const otpGenerator = require("otp-generator");
 const { getRedisClient } = require("../config/redis");
 
@@ -21,12 +21,8 @@ exports.register = async (req, res) => {
     const user = new User({ name, email, password, phone });
     await user.save();
 
-    // Generate verification OTP
-    const otpCode = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-    const redisClient = getRedisClient();
-    await redisClient.setEx(`otp:${email}`, 300, otpCode);
-    console.log(`OTP for ${email}: ${otpCode}`);
-    await sendEmail(email, "Verify your email", `Your verification code is: ${otpCode}`);
+    // Gửi OTP xác thực email
+    await sendOtpEmail(email);
 
     res.status(201).json({ 
       success: true,
@@ -42,7 +38,7 @@ exports.register = async (req, res) => {
   }
 };
 
-// Đăng nhập
+// Đăng nhập (gửi lại OTP nếu chưa verify)
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -57,10 +53,7 @@ exports.login = async (req, res) => {
 
     // Nếu user chưa verify email thì gửi lại OTP
     if (!user.verified) {
-      const otpCode = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-      const redisClient = getRedisClient();
-      await redisClient.setEx(`otp:${email}`, 300, otpCode);
-      await sendEmail(email, "Verify your email", `Your verification code is: ${otpCode}`);
+      await sendOtpEmail(email);
       return res.status(403).json({
         success: false,
         message: "Please verify your email. OTP has been sent again."
@@ -97,7 +90,6 @@ exports.login = async (req, res) => {
     });
   }
 };
-
 
 // Làm mới token
 exports.refreshToken = async (req, res) => {
@@ -140,15 +132,15 @@ exports.refreshToken = async (req, res) => {
 exports.logout = async (req, res) => {
   try {
     await removeTokensFromRedis(req.user._id);
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      message: "Logged out successfully" 
+      message: "Logged out successfully"
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error", 
-      error: error.message 
+      message: "Server error",
+      error: error.message
     });
   }
 };
@@ -199,12 +191,7 @@ exports.sendVerificationOTP = async (req, res) => {
       });
     }
 
-    const otpCode = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-    // Lưu OTP vào Redis với thời gian sống 5 phút
-    const redisClient = getRedisClient();
-    await redisClient.setEx(`otp:${email}`, 300, otpCode);
-    console.log(`OTP for ${email}: ${otpCode}`);
-    await sendEmail(email, "Verify your email", `Your verification code is: ${otpCode}`);
+    await sendOtpEmail(email);
 
     res.status(200).json({ 
       success: true,
@@ -282,12 +269,7 @@ exports.sendForgotPasswordOTP = async (req, res) => {
       });
     }
 
-    const otpCode = otpGenerator.generate(6, { upperCaseAlphabets: false, specialChars: false });
-    const redisClient = getRedisClient();
-    // Lưu OTP -> email
-    await redisClient.setEx(`forgot_password_otp:${otpCode}`, 300, email);
-    console.log(`Forgot Password OTP for ${email}: ${otpCode}`);
-    await sendEmail(email, "Reset your password", `Your verification code is: ${otpCode}`);
+    await sendOtpEmail(email);
 
     res.status(200).json({
       success: true,
