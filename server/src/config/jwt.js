@@ -1,31 +1,74 @@
 const jwt = require("jsonwebtoken");
-const redis = require("redis");
+const { getRedisClient } = require("./redis");
 
-exports.generateToken = (userId) => {
-  const payload = { userId };
-  const secret = process.env.JWT_SECRET;
-  const options = { expiresIn: "1h" }; // Token expires in 1 hour
-  return jwt.sign(payload, secret, options);
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+  
+  const refreshToken = jwt.sign(
+    { userId },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  return { accessToken, refreshToken };
 };
 
-exports.verifyToken = (token) => {
-  const secret = process.env.JWT_SECRET;
+const verifyToken = (token, isRefreshToken = false) => {
+  const secret = isRefreshToken ? process.env.REFRESH_TOKEN_SECRET : process.env.JWT_SECRET;
   try {
     return jwt.verify(token, secret);
   } catch (error) {
-    throw new Error("Invalid or expired token");
+    throw error;
   }
 };
 
-exports.storeTokenInRedis = async (token, userId) => {
-  const client = redis.createClient();
+const storeTokensInRedis = async (userId, tokens) => {
+  const client = getRedisClient();
   try {
-    await client.connect();
-    await client.setEx(`token:${userId}`, 3600, token); // Store token with a 1-hour expiration
-    console.log(`Token stored for user ${userId}`);
+    // Store access token with 15 minutes expiration
+    await client.setEx(`access_token:${userId}`, 900, tokens.accessToken);
+    
+    // Store refresh token with 7 days expiration
+    await client.setEx(`refresh_token:${userId}`, 604800, tokens.refreshToken);
+    
+    console.log(`Tokens stored for user ${userId}`);
   } catch (error) {
-    console.error("Error storing token in Redis:", error);
-  } finally {
-    await client.quit();
+    console.error("Error storing tokens in Redis:", error);
+    throw error;
   }
+};
+
+const removeTokensFromRedis = async (userId) => {
+  const client = getRedisClient();
+  try {
+    await client.del(`access_token:${userId}`);
+    await client.del(`refresh_token:${userId}`);
+    console.log(`Tokens removed for user ${userId}`);
+  } catch (error) {
+    console.error("Error removing tokens from Redis:", error);
+    throw error;
+  }
+};
+
+const verifyTokenInRedis = async (userId, token, isRefreshToken = false) => {
+  const client = getRedisClient();
+  try {
+    const storedToken = await client.get(`${isRefreshToken ? 'refresh' : 'access'}_token:${userId}`);
+    return storedToken === token;
+  } catch (error) {
+    console.error("Error verifying token in Redis:", error);
+    return false;
+  }
+};
+
+module.exports = {
+  generateTokens,
+  verifyToken,
+  storeTokensInRedis,
+  removeTokensFromRedis,
+  verifyTokenInRedis
 };
