@@ -7,6 +7,9 @@ import VerifyPage from "@/features/auth/pages/verify-page";
 import ForgotPasswordPage from "@/features/auth/pages/forgot-password-page";
 import ResetPasswordPage from "@/features/auth/pages/reset-password-page";
 
+import AdminRoute from "@/routes/admin-route";
+import PrivateRoute from "@/routes/private-route";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -18,6 +21,20 @@ export const router = createBrowserRouter([
       { path: "verify", element: <VerifyPage /> },
       { path: "forgot-password", element: <ForgotPasswordPage /> },
       { path: "reset-password", element: <ResetPasswordPage /> },
+      {
+        element: <PrivateRoute />,
+        children: [
+          // Add private routes here
+          // Example: { path: "checkout", element: <CheckoutPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    element: <AdminRoute />,
+    children: [
+      // Add admin routes here
+      // Example: { path: "admin/dashboard", element: <AdminDashboardPage /> },
     ],
   },
 ]);
