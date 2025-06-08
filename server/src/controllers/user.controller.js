@@ -1,23 +1,59 @@
 const User = require("../models/user.model");
 
+// Get user info
+exports.getUserInfo = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Người dùng không tồn tại",
+      });
+    }
+
+    const { _id, name, email, roles } = user;
+
+    res.status(200).json({
+      success: true,
+      data: { _id, name, email, roles },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Utility: handle validation error
 exports.handleValidationError = (res, error, customMessage) => {
   if (error.name === "ValidationError") {
-    const errors = Object.values(error.errors).map(err => err.message);
-    return res.status(400).json({ success: false, message: customMessage || "Validation error", errors });
+    const errors = Object.values(error.errors).map((err) => err.message);
+    return res.status(400).json({
+      success: false,
+      message: customMessage || "Validation error",
+      errors,
+    });
   }
-  res.status(500).json({ success: false, message: customMessage || "Server error", error: error.message });
+  res.status(500).json({
+    success: false,
+    message: customMessage || "Server error",
+    error: error.message,
+  });
 };
 
 // Get current user profile
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     res.status(200).json({ success: true, data: { user } });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -25,12 +61,19 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     Object.assign(user, req.body);
     await user.save();
 
-    res.status(200).json({ success: true, message: "Profile updated successfully", data: { user } });
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: { user },
+    });
   } catch (error) {
     handleValidationError(res, error, "Server error during profile update");
   }
@@ -45,15 +88,19 @@ exports.getAllUsers = async (req, res) => {
     const filter = {};
     if (status) filter.status = status;
     if (role) filter.roles = role;
-    if (verified !== undefined) filter.verified = verified === 'true';
+    if (verified !== undefined) filter.verified = verified === "true";
     if (search) {
       filter.$or = [
-        { name: new RegExp(search, 'i') },
-        { email: new RegExp(search, 'i') }
+        { name: new RegExp(search, "i") },
+        { email: new RegExp(search, "i") },
       ];
     }
 
-    const users = await User.find(filter).select("-password").skip(skip).limit(limit).sort({ createdAt: -1 });
+    const users = await User.find(filter)
+      .select("-password")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
     const total = await User.countDocuments(filter);
 
     res.status(200).json({
@@ -70,7 +117,9 @@ exports.getAllUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -78,21 +127,35 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     res.status(200).json({ success: true, data: { user } });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 // Admin: Create new user
 exports.createUser = async (req, res) => {
   try {
-    const { email, password, name, phone, roles = "USER", status = "ACTIVE" } = req.body;
+    const {
+      email,
+      password,
+      name,
+      phone,
+      roles = "USER",
+      status = "ACTIVE",
+    } = req.body;
 
     if (await User.findOne({ email }))
-      return res.status(400).json({ success: false, message: "Email already exists" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already exists" });
 
     const user = new User({ email, password, name, phone, roles, status });
     await user.save();
@@ -100,7 +163,11 @@ exports.createUser = async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
 
-    res.status(201).json({ success: true, message: "User created successfully", data: { user: userObj } });
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: { user: userObj },
+    });
   } catch (error) {
     handleValidationError(res, error, "Server error during user creation");
   }
@@ -113,20 +180,37 @@ exports.updateUser = async (req, res) => {
     const { email, status, roles } = req.body;
 
     if (status && !["ACTIVE", "INACTIVE", "BANNED"].includes(status))
-      return res.status(400).json({ success: false, message: "Invalid status value" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid status value" });
 
     if (roles && !["USER", "ADMIN"].includes(roles))
-      return res.status(400).json({ success: false, message: "Invalid role value" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid role value" });
 
     if (email) {
       const exists = await User.findOne({ email, _id: { $ne: id } });
-      if (exists) return res.status(400).json({ success: false, message: "Email already exists" });
+      if (exists)
+        return res
+          .status(400)
+          .json({ success: false, message: "Email already exists" });
     }
 
-    const user = await User.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const user = await User.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    res.status(200).json({ success: true, message: "User updated successfully", data: { user } });
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: { user },
+    });
   } catch (error) {
     handleValidationError(res, error, "Server error during user update");
   }
@@ -136,18 +220,32 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
-    res.status(200).json({ success: true, message: "User deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
 // Admin: Get user stats
 exports.getUserStats = async (req, res) => {
   try {
-    const [totalUsers, activeUsers, inactiveUsers, bannedUsers, verifiedUsers, adminUsers] = await Promise.all([
+    const [
+      totalUsers,
+      activeUsers,
+      inactiveUsers,
+      bannedUsers,
+      verifiedUsers,
+      adminUsers,
+    ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ status: "ACTIVE" }),
       User.countDocuments({ status: "INACTIVE" }),
@@ -163,23 +261,33 @@ exports.getUserStats = async (req, res) => {
       { $match: { createdAt: { $gte: sixMonthsAgo } } },
       {
         $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-          count: { $sum: 1 }
-        }
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
     ]);
 
     res.status(200).json({
       success: true,
       data: {
-        overview: { totalUsers, activeUsers, inactiveUsers, bannedUsers, verifiedUsers, adminUsers },
+        overview: {
+          totalUsers,
+          activeUsers,
+          inactiveUsers,
+          bannedUsers,
+          verifiedUsers,
+          adminUsers,
+        },
         monthlyRegistrations: monthlyStats,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error", error: error.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
-
-
