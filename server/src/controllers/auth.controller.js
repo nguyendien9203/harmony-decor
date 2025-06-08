@@ -48,25 +48,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Nếu user chưa verify email thì gửi lại OTP
-    if (!user.verified) {
-      const otpCode = await generateOtp(email);
-      await sendOtpEmail(email, otpCode);
-      return res.status(400).json({
-        success: false,
-        message:
-          "Email chưa được xác minh. Vui lòng kiểm tra email để xác minh tài khoản.",
-      });
-    }
-
-    if (user.status !== "ACTIVE") {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Tài khoản của bạn không hoạt động. Vui lòng liên hệ với quản trị viên.",
-      });
-    }
-
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({
@@ -75,17 +56,36 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Nếu user chưa verify email thì gửi lại OTP
+    if (!user.verified) {
+      const otpCode = await generateOtp(email);
+      await sendOtpEmail(email, otpCode);
+      return res.status(400).json({
+        status: 400,
+        message:
+          "Email chưa được xác minh. Vui lòng kiểm tra email để xác minh tài khoản.",
+      });
+    }
+
+    if (user.status !== "ACTIVE") {
+      return res.status(403).json({
+        status: 403,
+        message:
+          "Tài khoản của bạn không hoạt động. Vui lòng liên hệ với quản trị viên.",
+      });
+    }
+
     const tokens = generateToken(user._id);
 
     res.status(200).json({
       success: true,
+      message: "Đăng nhập thành công",
       accessToken: tokens,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
-      error: error.message,
+      message: error.message,
     });
   }
 };
@@ -174,9 +174,12 @@ exports.verifyEmail = async (req, res) => {
     // Delete OTP from Redis after successful verification
     await redisClient.del(`otp:${email}`);
 
+    const tokens = generateToken(user._id);
+
     res.status(200).json({
       success: true,
       message: "Email đã được xác minh thành công",
+      accessToken: tokens,
     });
   } catch (error) {
     res.status(500).json({

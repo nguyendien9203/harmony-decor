@@ -1,28 +1,43 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Logo from "@/assets/harmony-decor.svg";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { NAVIGATION_MENU } from "@/constants/navigation";
 import { ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize(); // Gọi ngay khi component mount
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const handleAnchorClick = (e, path) => {
     const targetId = path.substring(1);
     const element = document.getElementById(targetId);
     if (element) {
-      e.preventDefault(); // Ngăn chuyển trang
+      e.preventDefault();
       element.scrollIntoView({ behavior: "smooth" });
       // Thêm hash vào URL nếu cần
       window.history.pushState(null, "", path);
     }
-  };
-
-  // Handle redirect to login page
-  const handleLoginClick = () => {
-    navigate("/login");
   };
 
   return (
@@ -75,27 +90,46 @@ const Header = () => {
 
         {/* Right Section: Cart and Menu Icons */}
         <div className="flex items-center space-x-3">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full bg-white shadow-sm"
-          >
+          <Button variant="outline" size="icon" className="rounded-full">
             <ShoppingBag className="w-5 h-5" />
           </Button>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full bg-white shadow-sm"
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          <Button
-            variant="secondary"
-            className="rounded-full px-6 font-medium shadow-sm"
-            onClick={handleLoginClick}
-          >
-            Login
-          </Button>
+
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="rounded-full">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-56">
+                {isMobile &&
+                  NAVIGATION_MENU.map(({ label, path }, index) => (
+                    <DropdownMenuItem asChild key={index}>
+                      <Link to={path}>{label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+
+                {isMobile && <DropdownMenuSeparator />}
+
+                <DropdownMenuItem asChild>
+                  <Link to="/profile">Hồ sơ</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    logout();
+                    window.location.href = "/";
+                  }}
+                >
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button className="rounded-full" asChild>
+              <Link to="/login">Đăng nhập</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

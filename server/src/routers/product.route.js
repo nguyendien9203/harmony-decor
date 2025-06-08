@@ -25,6 +25,7 @@ router.put(
 router.get("/", productController.getProducts);
 
 router.get("/:id", productController.getProductById);
+router.get("/slug/:slug", productController.getProductBySlug);
 
 router.delete(
   "/:id",

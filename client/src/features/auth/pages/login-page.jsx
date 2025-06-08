@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,12 +13,51 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
+import { toast } from "sonner";
+
+import { useAuth } from "@/hooks/use-auth";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      const response = await login(email, password);
+      toast.success(response?.message || "Đăng nhập thành công!");
+      setLoading(false);
+      navigate("/", { replace: true });
+    } catch (error) {
+      setLoading(false);
+      const message = error?.message || "Đăng nhập thất bại! Vui lòng thử lại.";
+      if (error?.status === 400) {
+        toast.info("Xác minh Email", {
+          description: message,
+        });
+        navigate("/verify?from=verification-email", { state: { email } });
+        return;
+      }
+
+      toast.error("Lỗi đăng nhập:", {
+        description: message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-center bg-white px-4">
-      <Card className="w-full max-w-sm mt-10">
+    <div className="flex items-center justify-center bg-white mx-12 md:mx-0">
+      {loading && <FullscreenLoader />}
+      <Card className="w-full max-w-sm rounded-2xl shadow-md">
         <CardHeader>
           <CardTitle>Đăng nhập tài khoản của bạn</CardTitle>
           <CardDescription>
@@ -28,8 +69,8 @@ const LoginPage = () => {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent>
-          <form>
+        <form onSubmit={onSubmit} noValidate>
+          <CardContent>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -37,32 +78,44 @@ const LoginPage = () => {
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  required
+                  onChange={(e) => setEmail(e.target.value)}
+                  value={email}
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Mật khẩu</Label>
-                  <a
-                    href="forgot-password"
+                  <Link
+                    to="/forgot-password"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     Quên mật khẩu?
-                  </a>
+                  </Link>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Mật khẩu của bạn"
+                  onChange={(e) => setPassword(e.target.value)}
+                  value={password}
+                />
               </div>
             </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button type="submit" className="w-full rounded-full">
-            Đăng nhập
-          </Button>
-          <Button variant="outline" className="w-full rounded-full">
-            Đăng nhập với Google
-          </Button>
-        </CardFooter>
+          </CardContent>
+          <CardFooter className="flex-col gap-2 mt-4">
+            <Button
+              type="submit"
+              className="w-full rounded-full"
+              onClick={onSubmit}
+              disabled={loading || !email || !password}
+            >
+              Đăng nhập
+            </Button>
+            <Button variant="outline" className="w-full rounded-full">
+              Đăng nhập với Google
+            </Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   );
