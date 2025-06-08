@@ -89,7 +89,6 @@ exports.login = async (req, res) => {
     });
   }
 };
-
 // Send OTP to email for verification
 exports.sendVerificationEmail = async (req, res) => {
   try {

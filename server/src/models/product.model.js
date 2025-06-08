@@ -16,7 +16,7 @@ const productSchema = new mongoose.Schema(
       index: true,
     },
     description: {
-      type: String, // HTML in text format (e.g., <p>Product description</p>)
+      type: String, 
       required: [true, "Product description is required"],
     },
     price: {
@@ -25,13 +25,9 @@ const productSchema = new mongoose.Schema(
       min: [0, "Product price must be a positive number"],
     },
     images: {
-      type: [String],
-      validate: {
-        validator: function (v) {
-          return Array.isArray(v) && v.length > 0;
-        },
-        message: "At least one image is required",
-      },
+      type: String,
+      required: [true, "Product image is required"],
+      default: null,
     },
     status: {
       type: String,
@@ -40,11 +36,6 @@ const productSchema = new mongoose.Schema(
         message: "Status must be 'ACTIVE', 'INACTIVE', or 'OUT_OF_STOCK'",
       },
       default: "INACTIVE",
-    },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
-      required: [true, "Product category is required"],
     },
     stock: {
       type: Number,
@@ -84,11 +75,13 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Product creator is required"],
+      default: null,
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Product updater is required"],
+      default: null,
     },
   },
   {

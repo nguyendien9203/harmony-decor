@@ -7,7 +7,7 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const AuthRoute = require('./routers/auth.route');
 const UserRoute = require('./routers/user.route');
-
+const ProductRoute = require('./routers/product.route');
 const connectDB = require("./config/db");
 const { connectRedis } = require("./config/redis");
 // const cookieParser = require("cookie-parser");
@@ -40,6 +40,7 @@ app.use('/api/', limiter);
 // Routes
 app.use('/api/auth', AuthRoute);
 app.use('/api/users', UserRoute);
+app.use('/api/products', ProductRoute);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
