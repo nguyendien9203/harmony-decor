@@ -1,23 +1,36 @@
 const User = require("../models/user.model");
-const handleValidationError = require('../middlewares/validateRequest')
+// const handleValidationError = require('../middlewares/validateRequest')
+const cloudinary = require("../config/cloudinary");
+const fs = require("fs");
 
 
 exports.handleProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
 
     if (req.method === 'PUT') {
       Object.assign(user, req.body);
-      await user.save();
+      let imageUrl = null;
+          if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path, {
+              folder: "users",
+              resource_type: "image",
+              transformation: [
+              { width: 300, height: 300, crop: "fill", gravity: "face" },
+              { quality: "auto" }
+            ]
+            });
+            imageUrl = result.secure_url;
+            fs.unlinkSync(req.file.path);
+          }
+      user.avatar = imageUrl;
+      await user.save({user});
       return res.status(200).json({ 
         success: true, 
         message: "Cập nhật thông tin thành công", 
-        data: { user } 
       });
     }
-
-    res.status(200).json({ success: true, data: { user } });
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
   }
@@ -145,12 +158,42 @@ exports.updateUser = async (req, res) => {
     const { id } = req.params;
     const user = await User.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
     if (!user) return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
-
-    res.status(200).json({ success: true, message: "Cập nhật người dùng thành công", data: { user } });
+    let imageUrl = null;
+          if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path, {
+              folder: "users",
+              resource_type: "image",
+              transformation: [
+              { width: 300, height: 300, crop: "fill", gravity: "face" },
+              { quality: "auto" }
+            ]
+            });
+            imageUrl = result.secure_url;
+            fs.unlinkSync(req.file.path);
+          }
+    user.avatar = imageUrl;
+    res.status(200).json({ success: true, message: "Cập nhật người dùng thành công"});
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
   }
 };
+
+exports.updateStatus = async (req,res) =>{
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, {status : req.body.status},{new : true, runValidators : true});
+    res.status(200).json({ success: true, message: "Cập nhật trạng thái người dùng thành công"});
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
+  }
+}
+exports.updateRole = async (req,res) =>{
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, {roles : req.body.roles},{new : true, runValidators : true});
+    res.status(200).json({ success: true, message: "Cập nhật vai trò người dùng thành công"});
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Lỗi server", error: error.message });
+  }
+}
 
 // Admin: Delete user
 exports.deleteUser = async (req, res) => {

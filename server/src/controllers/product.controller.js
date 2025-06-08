@@ -11,6 +11,10 @@ exports.createProduct = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "products",
         resource_type: "image",
+        transformation: [
+              { width: 300, height: 300, crop: "fill", gravity: "face" },
+              { quality: "auto" }
+            ]
       });
       imageUrl = result.secure_url;
       fs.unlinkSync(req.file.path);
@@ -77,13 +81,17 @@ exports.updateProduct = async (req, res) => {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "products",
         resource_type: "image",
+        transformation: [
+              { width: 300, height: 300, crop: "fill", gravity: "face" },
+              { quality: "auto" }
+            ]
       });
       updateFields.images = result.secure_url;
       fs.unlinkSync(req.file.path);
     }
     const product = await Product.findByIdAndUpdate(req.params.id, updateFields, { new: true });
     if (!product) return res.status(404).json({ success: false, message: "Không tìm thấy sản phẩm" });
-    res.status(200).json({ success: true, message: "Cập nhật sản phẩm thành công", data: product });
+    res.status(200).json({ success: true, message: "Cập nhật sản phẩm thành công"});
   } catch (error) {
     res.status(500).json({ success: false, message: "Lỗi khi cập nhật sản phẩm", error: error.message });
   }
