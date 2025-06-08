@@ -1,5 +1,5 @@
 const Product = require("../models/product.model");
-const { cloudinary } = require("../config/cloudinary");
+const  cloudinary  = require("../config/cloudinary");
 const fs = require("fs");
 
 // Create Product

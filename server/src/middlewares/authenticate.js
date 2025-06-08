@@ -1,7 +1,7 @@
 const { verifyToken } = require("../config/jwt");
 const User = require("../models/user.model");
 
-const authenticate = async (req, res, next) => {
+exports.authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -30,4 +30,3 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate }; 

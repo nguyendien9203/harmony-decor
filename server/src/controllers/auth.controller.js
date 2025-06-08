@@ -5,7 +5,6 @@ const { sendEmail, generateOtp, sendOtpEmail } = require("../config/email");
 const otpGenerator = require("otp-generator");
 const { getRedisClient } = require("../config/redis");
 
-// Đăng ký
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -21,7 +20,6 @@ exports.register = async (req, res) => {
     const user = new User({ name, email, password, phone });
     await user.save();
 
-    // Gửi OTP xác thực email
     await sendOtpEmail(email);
 
     res.status(201).json({ 
@@ -38,7 +36,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Đăng nhập (gửi lại OTP nếu chưa verify)
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
