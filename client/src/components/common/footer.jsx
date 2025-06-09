@@ -4,7 +4,7 @@ import { Facebook, Instagram, Mail, Phone } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="bg-black text-white px-6 py-10">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="max-w-6xl grid grid-cols-1 md:grid-cols-4 gap-7 mx-12">
         {/* Logo + Description */}
         <div>
           <h2 className="text-2xl font-bold mb-3">Harmony Decor</h2>
