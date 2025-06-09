@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Logo from "@/assets/harmony-decor.svg";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { NAVIGATION_MENU } from "@/constants/navigation";
 import { ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -90,7 +91,12 @@ const Header = () => {
 
         {/* Right Section: Cart and Menu Icons */}
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="icon" className="rounded-full">
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full"
+            onClick={() => navigate(isAuthenticated ? "/cart" : "/login")}
+          >
             <ShoppingBag className="w-5 h-5" />
           </Button>
 
@@ -112,6 +118,9 @@ const Header = () => {
 
                 {isMobile && <DropdownMenuSeparator />}
 
+                <DropdownMenuItem asChild>
+                  <Link to="/orders">Đơn hàng</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/profile">Hồ sơ</Link>
                 </DropdownMenuItem>
