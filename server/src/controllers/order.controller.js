@@ -44,8 +44,7 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({ message: "Đặt hàng thành công!", order });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi tạo đơn hàng", error: error.message, req.user });
-
+    res.status(500).json({ message: "Lỗi tạo đơn hàng", error: error.message});
   }
 };
 
