@@ -4,6 +4,10 @@ import MainLayout from "@/layouts/main-layout";
 
 import HomePage from "@/features/product/pages/home-page";
 import ProductDetailPage from "@/features/product/pages/product-detail-page";
+import CartPage from "@/features/cart/pages/cart-page";
+import CheckoutPage from "@/features/checkout/checkout-page";
+import OrderListPage from "@/features/order/pages/order-list-page";
+import OrderDetailPage from "@/features/order/pages/order-detail-page";
 
 // Authentication pages
 import LoginPage from "@/features/auth/pages/login-page";
@@ -22,6 +26,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: "product/:slug", element: <ProductDetailPage /> },
+      { path: "cart", element: <CartPage /> },
+      { path: "checkout", element: <CheckoutPage /> },
+      { path: "orders", element: <OrderListPage /> },
+      { path: "orders/:id", element: <OrderDetailPage /> },
 
       // Authentication routes
       { path: "login", element: <LoginPage /> },

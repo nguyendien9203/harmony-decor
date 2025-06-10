@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Plus,
   Minus,
@@ -13,6 +13,8 @@ import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { getProductBySlug } from "@/features/product/home-service";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { addToCart } from "@/features/cart/cart-service";
+import { toast } from "sonner";
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -20,6 +22,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -39,7 +42,17 @@ const ProductDetailPage = () => {
   const handleIncrease = () => setQuantity((prev) => prev + 1);
   const handleDecrease = () => setQuantity((prev) => Math.max(prev - 1, 1));
   const handleAddToCart = () => {
-    console.log(`Added ${quantity} of ${product.name} to cart`);
+    if (!product) return;
+    const realId = product._id || product.id;
+    const realImage = Array.isArray(product.images) ? product.images[0] : product.images;
+    addToCart({
+      id: realId,
+      name: product.name,
+      price: product.price,
+      image: realImage,
+      quantity,
+    });
+    toast.success("Đã thêm vào giỏ hàng!");
   };
 
   if (loading) return <FullscreenLoader />;

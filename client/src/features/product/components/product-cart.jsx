@@ -1,12 +1,21 @@
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { addToCart } from "@/features/cart/cart-service";
+import { toast } from "sonner";
 
-export default function ProductCard({ slug, name, images, price }) {
+export default function ProductCard({ id, _id, slug, name, images, price }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
     navigate(`/product/${slug}`);
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation(); // Không trigger click vào card
+    const realId = id || _id;
+    addToCart({ id: realId, name, price, image: images, quantity: 1 });
+    toast.success("Đã thêm vào giỏ hàng!");
   };
 
   return (
@@ -35,6 +44,7 @@ export default function ProductCard({ slug, name, images, price }) {
             variant="ghost"
             size="icon"
             className="rounded-full shadow bg-white hover:bg-gray-100"
+            onClick={handleAddToCart}
           >
             <ShoppingBag className="w-4 h-4" />
           </Button>
