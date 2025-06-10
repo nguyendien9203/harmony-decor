@@ -63,7 +63,7 @@ export default function ProductList() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 justify-center">
         {products.map((product) => (
-          <ProductCard key={product._id} {...product} />
+          <ProductCard key={product._id || product.id} id={product._id || product.id} {...product} />
         ))}
       </div>
 

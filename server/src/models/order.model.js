@@ -4,7 +4,7 @@ const shippingAddressSchema = new mongoose.Schema(
   {
     recipientName: {
       type: String,
-      required: true,
+      required: [true, "Recipient name is required"],
       trim: true,
     },
     phone: {
@@ -17,19 +17,19 @@ const shippingAddressSchema = new mongoose.Schema(
     },
     street: {
       type: String,
-      required: true,
+      required: [true, "Street address is required"],
     },
     ward: {
-      type: String,
-      required: true,
+      type: Number,
+      required: [true, "Ward is required"],
     },
     district: {
-      type: String,
-      required: true,
+      type: Number,
+      required: [true, "District is required"],
     },
-    city: {
-      type: String,
-      required: true,
+    province: {
+      type: Number,
+      required: [true, "City is required"],
     },
   },
   { _id: false }
