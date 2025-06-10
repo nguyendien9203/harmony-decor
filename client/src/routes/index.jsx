@@ -5,7 +5,7 @@ import MainLayout from "@/layouts/main-layout";
 import HomePage from "@/features/product/pages/home-page";
 import ProductDetailPage from "@/features/product/pages/product-detail-page";
 import CartPage from "@/features/cart/pages/cart-page";
-import CheckoutPage from "@/features/checkout/checkout-page";
+import CheckoutPage from "@/features/checkout/pages/checkout-page";
 import OrderListPage from "@/features/order/pages/order-list-page";
 import OrderDetailPage from "@/features/order/pages/order-detail-page";
 

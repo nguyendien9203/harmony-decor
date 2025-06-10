@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Plus,
   Minus,
@@ -22,7 +22,6 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -44,7 +43,9 @@ const ProductDetailPage = () => {
   const handleAddToCart = () => {
     if (!product) return;
     const realId = product._id || product.id;
-    const realImage = Array.isArray(product.images) ? product.images[0] : product.images;
+    const realImage = Array.isArray(product.images)
+      ? product.images[0]
+      : product.images;
     addToCart({
       id: realId,
       name: product.name,
