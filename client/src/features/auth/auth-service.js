@@ -11,11 +11,18 @@ export const login = async (email, password) => {
       email,
       password,
     });
+
+    const { accessToken } = response.data;
+    if (accessToken) {
+      localStorage.setItem("accessToken", accessToken);
+    }
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
 };
+
+
 
 // Register a new user
 export const register = async (userData) => {

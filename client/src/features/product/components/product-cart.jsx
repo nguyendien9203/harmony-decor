@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { addToCart } from "@/features/cart/cart-service";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function ProductCard({ id, _id, slug, name, images, price }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const handleClick = () => {
     navigate(`/product/${slug}`);
@@ -13,6 +15,10 @@ export default function ProductCard({ id, _id, slug, name, images, price }) {
 
   const handleAddToCart = (e) => {
     e.stopPropagation(); // Không trigger click vào card
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
     const realId = id || _id;
     addToCart({ id: realId, name, price, image: images, quantity: 1 });
     toast.success("Đã thêm vào giỏ hàng!");

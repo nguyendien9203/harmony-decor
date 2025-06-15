@@ -17,10 +17,11 @@ import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
+import { getUserInfo } from "@/features/user/user-service";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,9 +33,15 @@ const LoginPage = () => {
     try {
       setLoading(true);
       const response = await login(email, password);
-      toast.success(response?.message || "Đăng nhập thành công!");
-      setLoading(false);
-      navigate("/", { replace: true });
+      const user = await getUserInfo(); 
+      if (user.roles === "USER") {
+        toast.success(response?.message || "Đăng nhập thành công!");
+        navigate("/", { replace: true });
+      } else {
+      toast.error("Chỉ người dùng mới có thể đăng nhập được.")
+      logout();      
+      } 
+
     } catch (error) {
       setLoading(false);
       const message = error?.message || "Đăng nhập thất bại! Vui lòng thử lại.";

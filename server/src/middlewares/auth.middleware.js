@@ -9,6 +9,7 @@ exports.authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = verifyToken(token);
+    console.log("Decoded Token:", decoded); 
     req.user = decoded;
     next();
   } catch (error) {
@@ -25,10 +26,13 @@ exports.requireRole = (roles) => {
       });
     }
 
-    if (!roles.includes(req.user.roles)) {
+    const userRole = req.user.roles; // "ADMIN" dạng string
+
+    // roles = ["ADMIN"] → so sánh được
+    if (!roles.includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: "Insufficient permissions",
+        message: `Insufficient permissions: your role is ${userRole}`,
       });
     }
 

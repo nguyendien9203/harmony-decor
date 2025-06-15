@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Plus,
   Minus,
@@ -15,6 +15,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { addToCart } from "@/features/cart/cart-service";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -22,8 +23,18 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchProduct = async () => {
       try {
         const response = await getProductBySlug(slug);
@@ -34,13 +45,16 @@ const ProductDetailPage = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   const handleIncrease = () => setQuantity((prev) => prev + 1);
   const handleDecrease = () => setQuantity((prev) => Math.max(prev - 1, 1));
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
     if (!product) return;
     const realId = product._id || product.id;
     const realImage = Array.isArray(product.images)
@@ -54,6 +68,26 @@ const ProductDetailPage = () => {
       quantity,
     });
     toast.success("Đã thêm vào giỏ hàng!");
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    if (!product) return;
+    const realId = product._id || product.id;
+    const realImage = Array.isArray(product.images)
+      ? product.images[0]
+      : product.images;
+    const item = {
+      id: realId,
+      name: product.name,
+      price: product.price,
+      image: realImage,
+      quantity,
+    };
+    navigate("/checkout", { state: { items: [item] } });
   };
 
   if (loading) return <FullscreenLoader />;
@@ -135,7 +169,7 @@ const ProductDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-              <Button className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md">
+              <Button className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md" onClick={handleBuyNow}>
                 <Zap className="w-4 h-4" />
                 <span className="text-base font-medium">Mua Ngay</span>
               </Button>

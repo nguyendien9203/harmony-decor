@@ -33,8 +33,8 @@ const schema = z
       .min(10, "Ít nhất 10 số")
       .max(15, "Tối đa 15 số")
       .regex(/^\d+$/, "Chỉ chứa số"),
-    password: z.string().min(6, "Mật khẩu ít nhất 6 ký tự"),
-    confirmPassword: z.string().min(6, "Mật khẩu ít nhất 6 ký tự"),
+    password: z.string().min(8, "Mật khẩu ít nhất 8 ký tự"),
+    confirmPassword: z.string().min(8, "Mật khẩu ít nhất 8 ký tự"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",

@@ -5,17 +5,10 @@ const {
   authenticateToken,
   requireRole,
 } = require("../middlewares/auth.middleware");
-const upload = require("../config/multer");
-
+const upload = require('../config/multer')
 // Priavte routes authenticated users
 router.get("/user-info", authenticateToken, userController.getUserInfo);
-router.get("/profile", authenticateToken, userController.handleProfile);
-router.put(
-  "/profile",
-  authenticateToken,
-  upload.single("avatar"),
-  userController.handleProfile
-);
+router.put("/user-info",upload.single("avatar"),authenticateToken,userController.updateUserInfo);
 
 // Admin routes (cần quyền ADMIN)
 router.get(

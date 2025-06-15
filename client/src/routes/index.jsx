@@ -8,6 +8,8 @@ import CartPage from "@/features/cart/pages/cart-page";
 import CheckoutPage from "@/features/checkout/pages/checkout-page";
 import OrderListPage from "@/features/order/pages/order-list-page";
 import OrderDetailPage from "@/features/order/pages/order-detail-page";
+import AboutUs from "@/components/ui/about-us";
+import Collection from "@/components/ui/collection";
 
 // Authentication pages
 import LoginPage from "@/features/auth/pages/login-page";
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
       { path: "checkout", element: <CheckoutPage /> },
       { path: "orders", element: <OrderListPage /> },
       { path: "orders/:id", element: <OrderDetailPage /> },
+      { path: "about-us", element: <AboutUs /> },
+      { path: "collection", element: <Collection /> },
 
       // Authentication routes
       { path: "login", element: <LoginPage /> },

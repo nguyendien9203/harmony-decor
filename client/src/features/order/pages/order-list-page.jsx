@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getMyOrders } from "../order-service";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router-dom";
 
 const statusColor = {
@@ -20,7 +20,7 @@ const statusLabel = {
 };
 
 const OrderListPage = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +30,8 @@ const OrderListPage = () => {
         const token = localStorage.getItem("accessToken");
         const res = await getMyOrders(token);
         setOrders(res.orders || []);
-      } catch (err) {
+      } catch (error) {
+        error.message
         setOrders([]);
       } finally {
         setLoading(false);

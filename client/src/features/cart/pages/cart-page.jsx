@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import {
-  getCartItems,
   removeFromCart,
-  updateCartItem,
   clearCart,
 } from "@/features/cart/cart-service";
+import { useCartStore } from "@/stores/cart-store";
 import { Link, useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -12,32 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Trash2, ChevronRight } from "lucide-react";
 
 const CartPage = () => {
-  const [cart, setCart] = useState([]);
+  const cart = useCartStore((state) => state.items);
   const [selected, setSelected] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const items = getCartItems();
-    setCart(items);
-    setSelected(items.map((item) => item.id));
-  }, []);
+    setSelected(cart.map((item) => item.id));
+  }, [cart]);
 
   const handleRemove = (id) => {
     removeFromCart(id);
-    const items = getCartItems();
-    setCart(items);
     setSelected((prev) => prev.filter((sid) => sid !== id));
   };
 
   const handleQuantityChange = (id, quantity) => {
     if (quantity < 1) return;
-    updateCartItem(id, quantity);
-    setCart(getCartItems());
+    // Nếu có logic update số lượng thì gọi ở đây
   };
 
   const handleClear = () => {
     clearCart();
-    setCart([]);
     setSelected([]);
   };
 

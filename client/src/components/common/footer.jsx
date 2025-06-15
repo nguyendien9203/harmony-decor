@@ -24,7 +24,7 @@ export default function Footer() {
               </a>
             </li>
             <li>
-              <a href="#about" className="hover:underline">
+              <a href="/aboutus" className="hover:underline">
                 Về chúng tôi
               </a>
             </li>
