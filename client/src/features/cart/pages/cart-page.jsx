@@ -1,79 +1,46 @@
-import React, { useEffect, useState } from "react";
-import {
-  getCartItems,
-  removeFromCart,
-  updateCartItem,
-  clearCart,
-} from "@/features/cart/cart-service";
+// src/pages/CartPage.jsx
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, ChevronRight } from "lucide-react";
+import { Trash2, ChevronRight, ShoppingCart, Plus, Minus } from "lucide-react";
+import { useCart } from "@/contexts/cart-context";
 
 const CartPage = () => {
-  const [cart, setCart] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const {
+    cart,
+    increment,
+    decrement,
+    removeFromCart,
+    removeSelectedItems,
+    clearCart,
+    toggleSelectItem,
+    toggleSelectAll,
+  } = useCart();
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const items = getCartItems();
-    setCart(items);
-    setSelected(items.map((item) => item.id));
-  }, []);
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const selectedItems = cart.filter((item) => item.selected);
 
-  const handleRemove = (id) => {
-    removeFromCart(id);
-    const items = getCartItems();
-    setCart(items);
-    setSelected((prev) => prev.filter((sid) => sid !== id));
-  };
+  const handleIncrease = (id) => increment(id);
+  const handleDecrease = (id) => decrement(id);
 
-  const handleQuantityChange = (id, quantity) => {
-    if (quantity < 1) return;
-    updateCartItem(id, quantity);
-    setCart(getCartItems());
-  };
+  const handleRemove = (id) => removeFromCart(id);
+  const handleClear = () => clearCart();
 
-  const handleClear = () => {
-    clearCart();
-    setCart([]);
-    setSelected([]);
-  };
-
-  const handleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selected.length === cart.length) {
-      setSelected([]);
-    } else {
-      setSelected(cart.map((item) => item.id));
-    }
-  };
-
-  const selectedItems = cart.filter((item) => selected.includes(item.id));
-  const total = selectedItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  if (cart.length === 0) {
+  if (!cart || cart.length === 0) {
     return (
-      <div className="container mx-auto py-12 flex flex-col items-center justify-center min-h-[60vh]">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-          Giỏ hàng của bạn đang trống
+      <div className="container mx-auto py-12 flex flex-col items-center min-h-[60vh]">
+        <ShoppingCart className="w-16 h-16 text-gray-400 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Giỏ hàng của bạn trống
         </h2>
-        <Button asChild className="mt-4" onClick={() => navigate("/")}>
-          <Link
-            to="/"
-            className="text-blue-600 underline hover:text-blue-800 transition"
-          >
-            Quay lại mua sắm
-          </Link>
+        <p className="text-gray-600 mb-6">
+          Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm.
+        </p>
+        <Button asChild>
+          <Link to="/">Tiếp tục mua sắm</Link>
         </Button>
       </div>
     );
@@ -91,8 +58,8 @@ const CartPage = () => {
               <tr className="bg-gray-100 text-gray-950">
                 <th className="p-3 font-semibold text-center">
                   <Checkbox
-                    checked={selected.length === cart.length && cart.length > 0}
-                    onCheckedChange={handleSelectAll}
+                    checked={cart.every((item) => item.selected)}
+                    onCheckedChange={(checked) => toggleSelectAll(checked)}
                   />
                 </th>
                 <th className="p-3 font-semibold text-left">Sản phẩm</th>
@@ -110,16 +77,18 @@ const CartPage = () => {
                 >
                   <td className="p-3 text-center">
                     <Checkbox
-                      checked={selected.includes(item.id)}
-                      onCheckedChange={() => handleSelect(item.id)}
+                      checked={item.selected}
+                      onCheckedChange={(checked) =>
+                        toggleSelectItem(item.id, checked)
+                      }
                     />
                   </td>
                   <td className="p-3 flex items-center gap-3 min-w-[180px]">
-                    {item.image && (
+                    {item.images && (
                       <img
-                        src={item.image}
+                        src={item.images}
                         alt={item.name}
-                        className="w-14 h-14 object-cover rounded-lg border"
+                        className="w-16 h-16 object-cover rounded-lg border"
                       />
                     )}
                     <span className="font-medium text-gray-800">
@@ -133,15 +102,30 @@ const CartPage = () => {
                     }).format(item.price)}
                   </td>
                   <td className="p-3 text-center">
-                    <Input
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(item.id, Number(e.target.value))
-                      }
-                      className="w-16 border border-gray-300 rounded-lg px-2 py-1 text-center focus:ring-2 focus:ring-black/30 outline-none transition"
-                    />
+                    <div className="flex items-center justify-center border border-gray-300 rounded-md px-1 py-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDecrease(item.id)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="w-2 h-2" />
+                      </Button>
+
+                      <span className="w-8 text-center font-medium select-none">
+                        {item.quantity < 10
+                          ? `0${item.quantity}`
+                          : item.quantity}
+                      </span>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleIncrease(item.id)}
+                      >
+                        <Plus className="w-2 h-2" />
+                      </Button>
+                    </div>
                   </td>
                   <td className="p-3 text-center font-semibold text-gray-900">
                     {new Intl.NumberFormat("vn-VN", {
@@ -152,7 +136,6 @@ const CartPage = () => {
                   <td className="p-3 text-center">
                     <Button
                       variant="ghost"
-                      className="text-red-500 hover:text-red-700"
                       onClick={() => handleRemove(item.id)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -164,10 +147,19 @@ const CartPage = () => {
           </table>
         </div>
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <Button variant="outline" onClick={handleClear}>
-            Xóa toàn bộ
-          </Button>
-          <div className="text-2xl font-bold text-black bg-gray-100 rounded-lg px-6 py-2">
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClear}>
+              Xóa toàn bộ
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => removeSelectedItems()}
+              disabled={selectedItems.length === 0}
+            >
+              Xóa đã chọn
+            </Button>
+          </div>
+          <div className="text-sm font-bold text-black bg-gray-100 rounded-lg px-6 py-2">
             Tổng:{" "}
             {new Intl.NumberFormat("vn-VN", {
               style: "currency",
@@ -181,6 +173,7 @@ const CartPage = () => {
           </Button>
           <Button
             onClick={() => {
+              if (selectedItems.length === 0) return;
               navigate("/checkout", { state: { items: selectedItems } });
             }}
             disabled={selectedItems.length === 0}
