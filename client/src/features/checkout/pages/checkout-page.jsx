@@ -19,7 +19,6 @@ import {
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 
 import { clearCart } from "@/features/cart/cart-service";
-import { createOrder } from "@/features/order/order-service";
 import {
   getProvinces,
   getDistrictsByProvinceId,
@@ -147,27 +146,27 @@ const CheckoutPage = () => {
   const onSubmit = async (data) => {
     try {
       setSubmitting(true);
+      const selectedProvince = provinces.find(p => p.code === Number(data.province));
+      const selectedDistrict = districts.find(d => d.code === Number(data.district));
+      const selectedWard = wards.find(w => w.code === Number(data.ward));
       const orderData = {
-        items: items.map(({ id, quantity, price }) => ({
+        items: items.map(({ id, quantity }) => ({
           productId: id,
           quantity,
-          price,
         })),
         shippingAddress: {
           recipientName: data.recipientName,
           phone: data.phone,
           street: data.street,
-          province: data.province,
-          district: data.district,
-          ward: data.ward,
+          province: selectedProvince?.name || data.province,
+          district: selectedDistrict?.name || data.district,
+          ward: selectedWard?.name || data.ward,
           note: data.note || "",
-          city: data.province,
         },
         paymentMethod: data.paymentMethod,
-        totalAmount: total,
       };
-
-      const response = await createOrder(orderData);
+      const token = localStorage.getItem("accessToken");
+      const response = await createOrder(orderData, token);
       toast.success(response?.message || "Đặt hàng thành công!");
       clearCart();
       navigate("/order-success", { state: { orderId: response.orderId } });

@@ -33,14 +33,18 @@ const LoginPage = () => {
     try {
       setLoading(true);
       const response = await login(email, password);
-      const user = await getUserInfo(); 
-      if (user.roles === "USER") {
+      const user = await getUserInfo();
+      
+      if (user.roles === "ADMIN") {
+        toast.success(response?.message || "Đăng nhập thành công!");
+        navigate("/admin", { replace: true });
+      } else if (user.roles === "USER") {
         toast.success(response?.message || "Đăng nhập thành công!");
         navigate("/", { replace: true });
       } else {
-      toast.error("Chỉ người dùng mới có thể đăng nhập được.")
-      logout();      
-      } 
+        toast.error("Vai trò người dùng không hợp lệ.");
+        logout();
+      }
 
     } catch (error) {
       setLoading(false);

@@ -63,7 +63,7 @@ exports.updateUserInfo = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, role, verified, search } = req.query;
+    const { page = 1, limit = 6, status, role, verified, search, sort } = req.query;
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -77,11 +77,17 @@ exports.getAllUsers = async (req, res) => {
       ];
     }
 
+    // Xử lý sort
+    let sortOption = { createdAt: -1 };
+    if (sort === "name_asc") sortOption = { name: 1 };
+    if (sort === "name_desc") sortOption = { name: -1 };
+    // Có thể mở rộng thêm các kiểu sort khác
+
     const users = await User.find(filter)
       .select("-password")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort(sortOption);
     const total = await User.countDocuments(filter);
 
     if (req.query.includeStats === "true") {

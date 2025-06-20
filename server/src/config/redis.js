@@ -5,7 +5,7 @@ let redisClient = null;
 const getRedisClient = () => {
   if (!redisClient) {
     redisClient = redis.createClient({
-      url: process.env.REDIS_URL || "redis://redis-service:6379"
+      url: process.env.REDIS_URL || "redis://localhost:6379", // sửa lại để test local
     });
 
     redisClient.on("connect", () => {
@@ -13,8 +13,8 @@ const getRedisClient = () => {
     });
 
     redisClient.on("error", (err) => {
-      console.error("Redis client connection error:", err);
-      process.exit(1);
+      console.error("⚠ Redis client connection error:", err.message);
+      // KHÔNG exit nữa, chỉ log
     });
   }
   return redisClient;
@@ -25,11 +25,11 @@ const connectRedis = async () => {
     const client = getRedisClient();
     if (!client.isOpen) {
       await client.connect();
-      console.log("Redis connected successfully");
+      console.log("✅ Redis connected successfully");
     }
   } catch (error) {
-    console.error("Redis connection error:", error);
-    process.exit(1);
+    console.error("⚠ Redis connection error:", error.message);
+    // KHÔNG exit nữa
   }
 };
 

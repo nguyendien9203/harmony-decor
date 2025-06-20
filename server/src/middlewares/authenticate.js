@@ -4,7 +4,7 @@ const User = require("../models/user.model");
 exports.authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith("Bearer")) {
       return res.status(401).json({
         success: false,
         message: "No token provided"

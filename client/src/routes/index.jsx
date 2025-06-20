@@ -6,8 +6,6 @@ import HomePage from "@/features/product/pages/home-page";
 import ProductDetailPage from "@/features/product/pages/product-detail-page";
 import CartPage from "@/features/cart/pages/cart-page";
 import CheckoutPage from "@/features/checkout/pages/checkout-page";
-import OrderListPage from "@/features/order/pages/order-list-page";
-import OrderDetailPage from "@/features/order/pages/order-detail-page";
 import AboutUs from "@/components/ui/about-us";
 import Collection from "@/components/ui/collection";
 
@@ -20,6 +18,12 @@ import ResetPasswordPage from "@/features/auth/pages/reset-password-page";
 
 import AdminRoute from "@/routes/admin-route";
 import PrivateRoute from "@/routes/private-route";
+import AdminDashboard from "@/features/admin/pages/admin-dashboard";
+import AdminLogin from "@/features/admin/pages/admin-login";
+import UserDashboard from "@/features/admin/pages/user-dashboard";
+import OrderDashboard from "@/features/admin/pages/order-dashboard";
+import DiscountDashboard from "@/features/admin/pages/discount-dashboard";
+import ProductDashboard from "@/features/admin/pages/product-dashboard";
 
 export const router = createBrowserRouter([
   {
@@ -30,12 +34,8 @@ export const router = createBrowserRouter([
       { path: "product/:slug", element: <ProductDetailPage /> },
       { path: "cart", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
-      { path: "orders", element: <OrderListPage /> },
-      { path: "orders/:id", element: <OrderDetailPage /> },
       { path: "about-us", element: <AboutUs /> },
       { path: "collection", element: <Collection /> },
-
-      // Authentication routes
       { path: "login", element: <LoginPage /> },
       { path: "register", element: <RegisterPage /> },
       { path: "verify", element: <VerifyPage /> },
@@ -50,11 +50,18 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Đặt route này RIÊNG, không bọc trong AdminRoute
+  { path: "/admin/login", element: <AdminLogin /> },
+
   {
     element: <AdminRoute />,
     children: [
-      // Add admin routes here
-      // Example: { path: "admin/dashboard", element: <AdminDashboardPage /> },
+      { path: "admin/dashboard", element: <AdminDashboard /> },
+      { path: "admin/dashboard/product", element: <ProductDashboard /> },
+      { path: "admin/dashboard/user", element: <UserDashboard /> },
+      { path: "admin/dashboard/order", element: <OrderDashboard /> },
+      { path: "admin/dashboard/discount", element: <DiscountDashboard /> },
+      // Các route admin khác (KHÔNG BAO GỒM /admin/login)
     ],
   },
 ]);

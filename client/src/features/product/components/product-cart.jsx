@@ -5,7 +5,7 @@ import { addToCart } from "@/features/cart/cart-service";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function ProductCard({ id, _id, slug, name, images, price }) {
+export default function ProductCard({ id, _id, slug, name, images, price, stock }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -44,6 +44,9 @@ export default function ProductCard({ id, _id, slug, name, images, price }) {
               currency: "VND",
             }).format(price)}
           </p>
+          {typeof stock !== 'undefined' && (
+            <p className="text-xs text-green-600">Tồn kho: {stock}</p>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <Button
