@@ -26,16 +26,14 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (loading) return;
 
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await sendForgotPasswordEmail(email);
       toast.success(
         response?.message || "Đã gửi mã xác nhận đến email của bạn!"
       );
-      setLoading(false);
       navigate("/verify?from=reset-password", { state: { email } });
     } catch (error) {
-      setLoading(false);
       const message =
         error?.message || "Gửi mã xác nhận thất bại! Vui lòng thử lại.";
       toast.error("Lỗi gửi mã xác nhận:", {

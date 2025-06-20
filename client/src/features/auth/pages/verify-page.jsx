@@ -42,7 +42,6 @@ export default function VerifyPage() {
       await verifyEmail(email, otp);
 
       toast.success("Xác minh thành công!");
-      setSubmitting(false);
       setOtp("");
 
       // Redirect based on the "from" parameter
@@ -52,7 +51,6 @@ export default function VerifyPage() {
         navigate("/", { replace: true });
       }
     } catch (error) {
-      setSubmitting(false);
       const message = error?.message || "Xác minh thất bại! Vui lòng thử lại.";
       toast.error("Lỗi xác minh:", {
         description: message,

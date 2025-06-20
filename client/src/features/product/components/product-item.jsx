@@ -1,10 +1,12 @@
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { addToCart } from "@/features/cart/cart-service";
-import { toast } from "sonner";
+import { useCart } from "@/contexts/cart-context";
 
-export default function ProductCard({ id, _id, slug, name, images, price }) {
+export default function ProductItem({ product }) {
+  const { name, price, images, slug } = product;
+  const { addToCart } = useCart();
+
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -12,10 +14,8 @@ export default function ProductCard({ id, _id, slug, name, images, price }) {
   };
 
   const handleAddToCart = (e) => {
-    e.stopPropagation(); // Không trigger click vào card
-    const realId = id || _id;
-    addToCart({ id: realId, name, price, image: images, quantity: 1 });
-    toast.success("Đã thêm vào giỏ hàng!");
+    e.stopPropagation();
+    addToCart(product);
   };
 
   return (
