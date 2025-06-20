@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,35 +17,32 @@ import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
-import { getUserInfo } from "@/features/user/user-service";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, logout } = useAuth();
+  const location = useLocation();
+  const { login, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const from = location.state?.from || "/";
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await login(email, password);
-      const user = await getUserInfo();
-      
+
       if (user.roles === "ADMIN") {
         toast.success(response?.message || "Đăng nhập thành công!");
         navigate("/admin", { replace: true });
       } else if (user.roles === "USER") {
         toast.success(response?.message || "Đăng nhập thành công!");
-        navigate("/", { replace: true });
-      } else {
-        toast.error("Vai trò người dùng không hợp lệ.");
-        logout();
+        navigate(from, { replace: true });
       }
-
     } catch (error) {
       setLoading(false);
       const message = error?.message || "Đăng nhập thất bại! Vui lòng thử lại.";

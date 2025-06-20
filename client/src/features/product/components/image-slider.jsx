@@ -18,7 +18,7 @@ export default function ImageSlider() {
   }, []);
 
   return (
-    <section className="relative w-full rounded-xl shadow-md overflow-hidden container">
+    <section className="relative w-full rounded-none md:rounded-2xl overflow-hidden">
       {/* Slide wrapper */}
       <div
         className="flex transition-transform duration-700 ease-in-out"

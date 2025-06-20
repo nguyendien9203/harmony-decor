@@ -18,18 +18,23 @@ import {
 } from "@/components/ui/select";
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 
-import { clearCart } from "@/features/cart/cart-service";
 import {
   getProvinces,
   getDistrictsByProvinceId,
   getWardsByDistrictId,
+  validateDiscountCode,
 } from "@/features/checkout/checkout-service";
+import { createOrder } from "@/features/order/order-service";
+import { createPayment } from "@/features/payment/payment-service";
+import { useCart } from "@/contexts/cart-context";
 
 import clsx from "clsx";
 import { toast } from "sonner";
+import { ChevronLeft } from "lucide-react";
 
 const checkoutSchema = z.object({
   recipientName: z.string().min(1, "Vui lòng nhập họ tên người nhận"),
+  email: z.string().email("Email không hợp lệ"),
   phone: z
     .string()
     .min(10, "Số điện thoại ít nhất 10 số")
@@ -62,6 +67,7 @@ const paymentMethods = [
 const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { cart, clearCart } = useCart();
   const items = location.state?.items || [];
 
   const [loading, setLoading] = useState(false);
@@ -73,6 +79,9 @@ const CheckoutPage = () => {
 
   const [selectedProvinceId, setSelectedProvinceId] = useState("");
   const [selectedDistrictId, setSelectedDistrictId] = useState("");
+
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   // Fetch provinces
   useEffect(() => {
@@ -129,6 +138,40 @@ const CheckoutPage = () => {
     0
   );
 
+  // Handle discount code application
+  const handleApplyDiscount = async (e) => {
+    e.preventDefault();
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
+      toast.error("Vui lòng nhập mã giảm giá");
+      return;
+    }
+
+    try {
+      const response = await validateDiscountCode(code, total);
+
+      const { amount, type } = response;
+      let discountAmount = 0;
+
+      if (type === "PERCENT") {
+        discountAmount = (total * amount) / 100;
+      } else if (type === "FIXED") {
+        discountAmount = amount;
+      }
+
+      setDiscountAmount(discountAmount);
+      toast.success("Áp dụng mã giảm giá thành công!");
+    } catch (error) {
+      setDiscountAmount(0);
+      console.error("Error applying discount code:", error);
+      toast.error("Lỗi áp dụng mã giảm giá", {
+        description:
+          error?.response?.data?.message ||
+          "Mã giảm giá không hợp lệ hoặc đã hết hạn.",
+      });
+    }
+  };
+
   const {
     register,
     handleSubmit,
@@ -144,35 +187,66 @@ const CheckoutPage = () => {
   });
 
   const onSubmit = async (data) => {
+    if (submitting) return;
+
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      const selectedProvince = provinces.find(p => p.code === Number(data.province));
-      const selectedDistrict = districts.find(d => d.code === Number(data.district));
-      const selectedWard = wards.find(w => w.code === Number(data.ward));
+      const totalAmount = total - discountAmount;
+
       const orderData = {
-        items: items.map(({ id, quantity }) => ({
+        items: items.map(({ id, quantity, price }) => ({
           productId: id,
           quantity,
+          price,
         })),
         shippingAddress: {
           recipientName: data.recipientName,
+          email: data.email,
           phone: data.phone,
           street: data.street,
-          province: selectedProvince?.name || data.province,
-          district: selectedDistrict?.name || data.district,
-          ward: selectedWard?.name || data.ward,
-          note: data.note || "",
+          province: data.province,
+          district: data.district,
+          ward: data.ward,
+          city: data.province,
         },
+        total: total,
+        discountCode: discountCode || null,
+        discountAmount: discountAmount,
+        totalAmount: totalAmount || 0,
         paymentMethod: data.paymentMethod,
+        note: data.note || "",
       };
-      const token = localStorage.getItem("accessToken");
-      const response = await createOrder(orderData, token);
-      toast.success(response?.message || "Đặt hàng thành công!");
-      clearCart();
-      navigate("/order-success", { state: { orderId: response.orderId } });
+
+      const response = await createOrder(orderData);
+      if (response.status === 201) {
+        if (response.order.paymentMethod === "ONLINE_PAYMENT") {
+          const paymentResponse = await createPayment(
+            totalAmount,
+            response.order._id
+          );
+          if (paymentResponse.status === 200) {
+            window.location.href = paymentResponse.vnpUrl;
+          } else {
+            toast.error("Lỗi tạo thanh toán", {
+              description: paymentResponse.data.message || "Vui lòng thử lại.",
+            });
+          }
+        } else {
+          // Redirect to order success page
+          toast.success("Đặt hàng thành công!", {
+            description: "Bạn sẽ nhận được email xác nhận đơn hàng.",
+          });
+          navigate("/order-success", {
+            state: { order: response.order },
+          });
+        }
+        clearCart();
+      }
     } catch (error) {
       toast.error("Lỗi đặt hàng", {
-        description: error?.message || "Đặt hàng thất bại! Vui lòng thử lại.",
+        description:
+          error?.response?.data?.message ||
+          "Đặt hàng thất bại! Vui lòng thử lại.",
       });
     } finally {
       setSubmitting(false);
@@ -180,6 +254,12 @@ const CheckoutPage = () => {
   };
 
   if (loading) return <FullscreenLoader />;
+
+  // If no items in cart, redirect to cart page
+  if (!items || items.length === 0) {
+    navigate("/cart");
+    return null;
+  }
 
   return (
     <form
@@ -193,7 +273,8 @@ const CheckoutPage = () => {
             <CardTitle>Thông tin giao hàng</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid gap-4 mb-4">
+              {/* Row 1: Recipient Name */}
               <div className="grid gap-2">
                 <Input
                   placeholder="Họ tên người nhận"
@@ -205,15 +286,119 @@ const CheckoutPage = () => {
                 </p>
               </div>
 
-              <div className="grid gap-2">
-                <Input
-                  placeholder="Số điện thoại"
-                  {...register("phone")}
-                  className={clsx({ "border-red-500": errors.phone })}
-                />
-                <p className="text-red-600 text-sm">{errors.phone?.message}</p>
+              {/* Row 2: Email and Phone Number */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Input
+                    placeholder="Email"
+                    {...register("email")}
+                    className={clsx({ "border-red-500": errors.email })}
+                  />
+                  <p className="text-red-600 text-sm">
+                    {errors.email?.message}
+                  </p>
+                </div>
+                <div className="grid gap-2">
+                  <Input
+                    placeholder="Số điện thoại"
+                    {...register("phone")}
+                    className={clsx({ "border-red-500": errors.phone })}
+                  />
+                  <p className="text-red-600 text-sm">
+                    {errors.phone?.message}
+                  </p>
+                </div>
               </div>
 
+              {/* Row 3: Province, District, Ward */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Province */}
+                <div className="grid gap-2">
+                  <Select
+                    onValueChange={(val) => {
+                      setValue("province", Number(val));
+                      setSelectedProvinceId(val);
+                    }}
+                    value={watch("province")?.toString()}
+                  >
+                    <SelectTrigger
+                      className={clsx("w-full", {
+                        "border-red-500": errors.province,
+                      })}
+                    >
+                      <SelectValue placeholder="Chọn tỉnh/thành phố" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {provinces.map(({ code, name }) => (
+                        <SelectItem key={code} value={code.toString()}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <p className="text-red-600 text-sm">
+                    {errors.province?.message}
+                  </p>
+                </div>
+
+                {/* District */}
+                <div className="grid gap-2">
+                  <Select
+                    onValueChange={(val) => {
+                      setValue("district", Number(val));
+                      setSelectedDistrictId(val);
+                    }}
+                    value={watch("district")?.toString()}
+                    disabled={!selectedProvinceId}
+                  >
+                    <SelectTrigger
+                      className={clsx("w-full", {
+                        "border-red-500": errors.district,
+                      })}
+                    >
+                      <SelectValue placeholder="Chọn quận/huyện" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {districts.map(({ code, name }) => (
+                        <SelectItem key={code} value={code.toString()}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-red-600 text-sm">
+                    {errors.district?.message}
+                  </p>
+                </div>
+
+                {/* Ward */}
+                <div className="grid gap-2">
+                  <Select
+                    onValueChange={(val) => setValue("ward", Number(val))}
+                    value={watch("ward")?.toString()}
+                    disabled={!selectedDistrictId}
+                  >
+                    <SelectTrigger
+                      className={clsx("w-full", {
+                        "border-red-500": errors.ward,
+                      })}
+                    >
+                      <SelectValue placeholder="Chọn phường/xã" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {wards.map(({ code, name }) => (
+                        <SelectItem key={code} value={code.toString()}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-red-600 text-sm">{errors.ward?.message}</p>
+                </div>
+              </div>
+
+              {/* Row 4: Street Address */}
               <div className="grid gap-2">
                 <Input
                   placeholder="Số nhà, đường"
@@ -223,94 +408,14 @@ const CheckoutPage = () => {
                 <p className="text-red-600 text-sm">{errors.street?.message}</p>
               </div>
 
-              <div className="grid gap-2">
-                <Select
-                  onValueChange={(val) => {
-                    setValue("province", Number(val));
-                    setSelectedProvinceId(val);
-                  }}
-                  value={watch("province")?.toString()}
-                >
-                  <SelectTrigger
-                    className={clsx("w-full", {
-                      "border-red-500": errors.province,
-                    })}
-                  >
-                    <SelectValue placeholder="Chọn tỉnh/thành phố" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {provinces.map(({ code, name }) => (
-                      <SelectItem key={code} value={code.toString()}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <p className="text-red-600 text-sm">
-                  {errors.province?.message}
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Select
-                  onValueChange={(val) => {
-                    setValue("district", Number(val));
-                    setSelectedDistrictId(val);
-                  }}
-                  value={watch("district")?.toString()}
-                  disabled={!selectedProvinceId}
-                >
-                  <SelectTrigger
-                    className={clsx("w-full", {
-                      "border-red-500": errors.district,
-                    })}
-                  >
-                    <SelectValue placeholder="Chọn quận/huyện" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {districts.map(({ code, name }) => (
-                      <SelectItem key={code} value={code.toString()}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-red-600 text-sm">
-                  {errors.district?.message}
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Select
-                  onValueChange={(val) => setValue("ward", Number(val))}
-                  value={watch("ward")?.toString()}
-                  disabled={!selectedDistrictId}
-                >
-                  <SelectTrigger
-                    className={clsx("w-full", {
-                      "border-red-500": errors.ward,
-                    })}
-                  >
-                    <SelectValue placeholder="Chọn phường/xã" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wards.map(({ code, name }) => (
-                      <SelectItem key={code} value={code.toString()}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-red-600 text-sm">{errors.ward?.message}</p>
-              </div>
+              {/* Row 5: Note */}
+              <Textarea
+                rows={3}
+                placeholder="Ghi chú cho đơn hàng (tuỳ chọn)"
+                {...register("note")}
+                onChange={(e) => setValue("note", e.target.value)}
+              />
             </div>
-
-            <Textarea
-              rows={3}
-              placeholder="Ghi chú cho đơn hàng (tuỳ chọn)"
-              {...register("note")}
-            />
           </CardContent>
         </Card>
 
@@ -340,35 +445,70 @@ const CheckoutPage = () => {
         </Card>
       </div>
 
-      <div className="col-span-2 lg:col-span-1 h-full flex flex-col">
-        <Card className="shadow-none flex flex-col flex-grow">
+      <div className="col-span-2 lg:col-span-1 h-full flex flex-col w-full overflow-hidden">
+        <Card className="shadow-none flex flex-col flex-grow w-full overflow-hidden">
           <CardHeader>
             <CardTitle>Tóm tắt đơn hàng</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col flex-grow">
+            {/* Cart Items */}
             <div className="space-y-3 divide-y flex-grow mb-4">
-              {items.map(({ id, name, image, price }) => (
+              {cart.map(({ id, name, images, price, quantity }) => (
                 <div key={id} className="flex justify-between items-center">
-                  <div className="flex gap-3 items-center justify-center">
-                    {image && (
+                  <div className="flex gap-3 items-center w-full">
+                    {/* Product Image*/}
+                    {images && (
                       <img
-                        src={image}
+                        src={images}
                         alt={name}
-                        className="w-14 h-14 rounded-lg object-cover border"
+                        className="w-16 h-16 rounded-lg object-cover border"
                       />
                     )}
-                    <div className="text-sm">
-                      <div className="font-semibold text-gray-800 mb-1">
+
+                    {/* Product Info */}
+                    <div className="flex flex-col justify-between w-full h-full">
+                      {/* Name */}
+                      <div className="font-semibold text-gray-800 mb-1 text-sm">
                         {name}
                       </div>
-                      <div className="text-gray-500">
-                        {price.toLocaleString()}₫
+
+                      {/* Price and Quantity */}
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>
+                          {price.toLocaleString("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          })}
+                        </span>
+                        <span>x{quantity}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Discount code input */}
+            <div className="mb-4">
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="text"
+                  placeholder="Nhập mã giảm giá"
+                  className="flex-grow"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value)}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={(e) => handleApplyDiscount(e)}
+                  disabled={submitting}
+                >
+                  Áp dụng
+                </Button>
+              </div>
+            </div>
+
+            {/* Total summary */}
             <div className="border-t pt-4 space-y-2 text-sm md:mt-auto">
               <div className="flex justify-between">
                 <span>Tạm tính</span>
@@ -383,22 +523,41 @@ const CheckoutPage = () => {
                 <span>Phí vận chuyển</span>
                 <span>Miễn phí</span>
               </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span>Mã giảm giá</span>
+                  <span>
+                    -
+                    {discountAmount.toLocaleString("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    })}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-sm">
                 <span>Tổng cộng</span>
                 <span>
-                  {total.toLocaleString("vi-VN", {
+                  {(total - discountAmount).toLocaleString("vi-VN", {
                     style: "currency",
                     currency: "VND",
                   })}
                 </span>
               </div>
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full mt-4"
-              >
-                {submitting ? "Đang xử lý..." : "Xác nhận đặt hàng"}
-              </Button>
+
+              <div className="flex justify-between mt-4 w-full">
+                <Button
+                  variant="outline"
+                  className="w-auto border-none shadow-none"
+                  onClick={() => navigate(-1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Quay lại
+                </Button>
+                <Button type="submit" disabled={submitting} className="w-2/3">
+                  Đặt hàng
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

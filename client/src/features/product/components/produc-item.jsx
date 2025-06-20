@@ -1,27 +1,21 @@
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { addToCart } from "@/features/cart/cart-service";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { useCart } from "@/contexts/cart-context";
 
-export default function ProductCard({ id, _id, slug, name, images, price, stock }) {
+export default function ProductItem({ product }) {
+  const { name, price, images, slug } = product;
+  const { addToCart } = useCart();
+
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
 
   const handleClick = () => {
     navigate(`/product/${slug}`);
   };
 
   const handleAddToCart = (e) => {
-    e.stopPropagation(); // Không trigger click vào card
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    const realId = id || _id;
-    addToCart({ id: realId, name, price, image: images, quantity: 1 });
-    toast.success("Đã thêm vào giỏ hàng!");
+    e.stopPropagation();
+    addToCart(product);
   };
 
   return (
@@ -44,9 +38,6 @@ export default function ProductCard({ id, _id, slug, name, images, price, stock 
               currency: "VND",
             }).format(price)}
           </p>
-          {typeof stock !== 'undefined' && (
-            <p className="text-xs text-green-600">Tồn kho: {stock}</p>
-          )}
         </div>
         <div className="flex items-center space-x-2">
           <Button

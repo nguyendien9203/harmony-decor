@@ -9,7 +9,7 @@ import {
 const SortSelect = ({ sort, setSort }) => {
   return (
     <Select value={sort} onValueChange={setSort}>
-      <SelectTrigger className="w-[200px]">
+      <SelectTrigger className="w-full sm:w-[200px]">
         <SelectValue placeholder="Sắp xếp theo giá" />
       </SelectTrigger>
       <SelectContent>

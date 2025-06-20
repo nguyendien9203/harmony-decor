@@ -112,14 +112,14 @@ exports.getAllOrders = async (req, res) => {
     if (search) {
       // Tìm userId theo tên khách hàng
       const users = await User.find({
-        name: { $regex: search, $options: "i" }
+        name: { $regex: search, $options: "i" },
       }).select("_id");
-      const userIds = users.map(u => u._id);
+      const userIds = users.map((u) => u._id);
 
       // Tìm theo note hoặc userId
       query.$or = [
         { note: { $regex: search, $options: "i" } },
-        { userId: { $in: userIds } }
+        { userId: { $in: userIds } },
       ];
     }
 

@@ -51,16 +51,15 @@ export default function ResetPasswordPage() {
   });
 
   const onSubmit = async (data) => {
+    if (loading) return;
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await resetPassword(email, data.newPassword);
 
       toast.success(response?.message || "Đặt lại mật khẩu thành công!");
-      setLoading(false);
 
       navigate("/login", { replace: true });
     } catch (error) {
-      setLoading(false);
       const message =
         error?.message || "Đặt lại mật khẩu thất bại! Vui lòng thử lại.";
       toast.error("Lỗi đặt lại mật khẩu:", {

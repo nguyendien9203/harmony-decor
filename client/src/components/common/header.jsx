@@ -12,11 +12,13 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useCart } from "@/contexts/cart-context";
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
+  const { cart } = useCart();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -30,9 +32,11 @@ const Header = () => {
     };
   }, []);
 
+  const productCount = cart.length;
+
   return (
     <header className="sticky top-0 z-50 py-1 px-6 bg-white">
-      <div className="container mx-auto px-4 flex items-center justify-between">
+      <div className="container mx-auto w-full flex items-center justify-between px-4 lg:px-[130px] h-[100px]">
         {/* Left Section: Logo and Navigation Menu */}
         <div className="flex items-center gap-10 h-full">
           {/* Logo */}
@@ -67,14 +71,22 @@ const Header = () => {
 
         {/* Right Section: Cart and Menu Icons */}
         <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full"
-            onClick={() => navigate(isAuthenticated ? "/cart" : "/login")}
-          >
-            <ShoppingBag className="w-5 h-5" />
-          </Button>
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={() => navigate("/cart")}
+            >
+              <ShoppingBag className="w-5 h-5" />
+            </Button>
+
+            {productCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                {productCount}
+              </span>
+            )}
+          </div>
 
           {isAuthenticated ? (
             <DropdownMenu>

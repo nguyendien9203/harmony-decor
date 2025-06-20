@@ -1,5 +1,4 @@
 const cloudinary = require("cloudinary").v2;
-// const { CloudinaryStorage } = require("multer-storage-cloudinary");
 require("dotenv").config();
 
 cloudinary.config({
@@ -7,14 +6,5 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-// const storage = new CloudinaryStorage({
-//   cloudinary: cloudinary,
-//   params: {
-//     folder: "uploads",
-//     allowed_formats: ["jpg", "png", "jpeg", "webp"],
-//     transformation: [{ quality: "auto:best" }],
-//   },
-// });
 
 module.exports = cloudinary;

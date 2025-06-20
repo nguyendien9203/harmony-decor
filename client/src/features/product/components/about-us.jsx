@@ -2,11 +2,14 @@ import slider1 from "@/assets/slider/slider1.png";
 
 export default function AboutUs() {
   return (
-    <section id="about-us" className="py-10 max-w-6xl container mx-auto px-4">
+    <section
+      id="about-us"
+      className="w-full py-6 mx-auto flex flex-col items-center mt-12"
+    >
       <h2 className="text-3xl font-semibold mb-8 text-center">Về chúng tôi</h2>
 
       {/* Grid Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 w-full px-4 md:px-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 w-full">
         {/* Left 2/3 */}
         <div className="md:col-span-2 relative h-64 md:h-96 rounded-xl overflow-hidden w-full">
           <img
@@ -41,7 +44,7 @@ export default function AboutUs() {
       </div>
 
       {/* Grid Row 2 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4 md:px-0">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         {/* Item 1 */}
         <div className="relative h-64 rounded-xl overflow-hidden w-full">
           <img

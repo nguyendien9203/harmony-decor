@@ -9,16 +9,20 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { getProductBySlug } from "@/features/product/home-service";
+
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/hooks/use-auth";
+
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
-import { addToCart } from "@/features/cart/cart-service";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
+  const { addToCart } = useCart();
+
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -49,25 +53,25 @@ const ProductDetailPage = () => {
   }, [slug, isAuthenticated]);
 
   const handleIncrease = () => setQuantity((prev) => prev + 1);
+
   const handleDecrease = () => setQuantity((prev) => Math.max(prev - 1, 1));
+
   const handleAddToCart = () => {
     if (!isAuthenticated) {
       navigate("/login");
       return;
     }
     if (!product) return;
-    const realId = product._id || product.id;
-    const realImage = Array.isArray(product.images)
-      ? product.images[0]
-      : product.images;
-    addToCart({
-      id: realId,
+
+    const item = {
+      id: product._id,
       name: product.name,
       price: product.price,
-      image: realImage,
       quantity,
-    });
-    toast.success("Đã thêm vào giỏ hàng!");
+      images: product.images,
+    };
+
+    addToCart(item);
   };
 
   const handleBuyNow = () => {
@@ -102,16 +106,6 @@ const ProductDetailPage = () => {
             alt={product.name}
             className="w-full h-[400px] object-cover rounded-xl mb-4"
           />
-          {/* <div className="flex gap-4">
-            {product.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`thumb-${idx}`}
-                className="w-20 h-20 object-cover rounded-lg border hover:ring-2 hover:ring-black"
-              />
-            ))}
-          </div> */}
         </div>
 
         {/* Right: Product info */}
@@ -147,20 +141,26 @@ const ProductDetailPage = () => {
               {/* Quantity */}
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Qty :</span>
-                <div className="flex items-center border rounded px-2 py-1">
-                  <Button variant="ghost" size="icon" onClick={handleDecrease}>
+                <div className="flex items-center justify-center border border-gray-300 rounded-md px-1 py-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDecrease}
+                    className="text-lg font-bold px-2"
+                  >
                     <Minus className="w-4 h-4" />
                   </Button>
-                  <input
-                    type="number"
-                    min={1}
-                    value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, parseInt(e.target.value || "1")))
-                    }
-                    className="w-10 text-center outline-none"
-                  />
-                  <Button variant="ghost" size="icon" onClick={handleIncrease}>
+
+                  <span className="w-8 text-center font-medium text-lg select-none">
+                    {quantity < 10 ? `0${quantity}` : quantity}
+                  </span>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleIncrease}
+                    className="text-lg font-bold px-2"
+                  >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
@@ -169,7 +169,10 @@ const ProductDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-              <Button className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md" onClick={handleBuyNow}>
+              <Button
+                className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md"
+                onClick={handleBuyNow}
+              >
                 <Zap className="w-4 h-4" />
                 <span className="text-base font-medium">Mua Ngay</span>
               </Button>
@@ -205,8 +208,8 @@ const ProductDetailPage = () => {
                       (product.description.length > 300 ? "..." : "")
                 }
                 readOnly={true}
-                theme="bubble" // hoặc "snow" tùy thích, "bubble" nhẹ hơn
-                modules={{ toolbar: false }} // ẩn toolbar khi chỉ xem
+                theme="bubble"
+                modules={{ toolbar: false }}
               />
             </div>
           </div>
