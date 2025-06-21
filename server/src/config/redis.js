@@ -5,9 +5,9 @@ let redisClient = null;
 const getRedisClient = () => {
   if (!redisClient) {
     redisClient = redis.createClient({
-      url: process.env.REDIS_URL || "redis://redis-service:6379",
-      // host: process.env.REDIS_HOST || "localhost",
-      // port: process.env.REDIS_PORT || 6379,
+      //url: process.env.REDIS_URL || "redis://redis-service:6379",
+      host: process.env.REDIS_HOST || "localhost",
+      port: process.env.REDIS_PORT || 6379,
     });
 
     redisClient.on("connect", () => {
