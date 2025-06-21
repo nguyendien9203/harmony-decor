@@ -1,11 +1,11 @@
 const User = require("../models/user.model");
-// const handleValidationError = require('../middlewares/validateRequest')
 const cloudinary = require("../config/cloudinary");
 const fs = require("fs");
 
 // Get user info
 exports.getUserInfo = async (req, res) => {
   try {
+
     const user = await User.findById(req.user.userId).select("-password");
 
     if (!user) {
@@ -26,66 +26,44 @@ exports.getUserInfo = async (req, res) => {
   }
 };
 
-exports.handleProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy người dùng" });
 
-    if (req.method === "PUT") {
-      Object.assign(user, req.body);
-      let imageUrl = null;
-      if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: "users",
-          resource_type: "image",
-          transformation: [
-            { width: 300, height: 300, crop: "fill", gravity: "face" },
-            { quality: "auto" },
-          ],
-        });
-        imageUrl = result.secure_url;
-        fs.unlinkSync(req.file.path);
-      }
-      user.avatar = imageUrl;
-      await user.save({ user });
-      return res.status(200).json({
-        success: true,
-        message: "Cập nhật thông tin thành công",
-      });
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// Update current user profile
-exports.updateProfile = async (req, res) => {
+exports.updateUserInfo = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+    }
 
     Object.assign(user, req.body);
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "users",
+        resource_type: "image",
+        transformation: [
+          { width: 300, height: 300, crop: "fill", gravity: "face" },
+          { quality: "auto" },
+        ],
+      });
+      user.avatar = result.secure_url;
+      fs.unlinkSync(req.file.path); 
+    }
+
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: "Profile updated successfully",
-      data: { user },
+      message: "Cập nhật thông tin thành công",
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
+
 exports.getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, status, role, verified, search } = req.query;
+    const { page = 1, limit = 6, status, role, verified, search, sort } = req.query;
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -99,11 +77,17 @@ exports.getAllUsers = async (req, res) => {
       ];
     }
 
+    // Xử lý sort
+    let sortOption = { createdAt: -1 };
+    if (sort === "name_asc") sortOption = { name: 1 };
+    if (sort === "name_desc") sortOption = { name: -1 };
+    // Có thể mở rộng thêm các kiểu sort khác
+
     const users = await User.find(filter)
       .select("-password")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort(sortOption);
     const total = await User.countDocuments(filter);
 
     if (req.query.includeStats === "true") {

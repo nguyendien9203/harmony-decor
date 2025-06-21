@@ -75,7 +75,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    const tokens = generateToken(user._id);
+    const tokens = generateToken(user);
 
     res.status(200).json({
       success: true,

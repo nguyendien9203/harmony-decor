@@ -7,6 +7,21 @@ const shippingAddressSchema = new mongoose.Schema(
       required: [true, "Recipient name is required"],
       trim: true,
     },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function (v) {
+          return /^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(
+            v
+          );
+        },
+        message: (props) => `${props.value} is not a valid email`,
+      },
+    },
     phone: {
       type: String,
       required: true,
@@ -69,6 +84,24 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    total: {
+      type: Number,
+      required: true,
+      min: [0, "Total must be a positive number"],
+    },
+
+    discountCode: {
+      type: String,
+      maxlength: [20, "Discount code cannot exceed 20 characters"],
+      trim: true,
+    },
+
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: [0, "Discount amount must be a positive number"],
+    },
+
     totalAmount: {
       type: Number,
       required: true,
@@ -100,17 +133,13 @@ const orderSchema = new mongoose.Schema(
 
     deliveredAt: Date,
     paidAt: Date,
+    transactionId: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+    },
   },
   { timestamps: true }
 );
-
-orderSchema.pre("save", function (next) {
-  if (this.isModified("items")) {
-    this.totalAmount = this.items.reduce((total, item) => {
-      return total + item.price * item.quantity;
-    }, 0);
-  }
-  next();
-});
 
 module.exports = mongoose.model("Order", orderSchema);

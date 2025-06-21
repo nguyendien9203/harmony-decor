@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_PROVINCES } from "@/utils/config";
+import { API_PROVINCES, API_BASE_URL, getAuthHeaders } from "@/utils/config";
 
 // Get list of provinces
 export const getProvinces = async () => {
@@ -34,6 +34,21 @@ export const getWardsByDistrictId = async (districtId) => {
     return response.data.wards || [];
   } catch (error) {
     console.error("Error fetching wards:", error);
+    throw error;
+  }
+};
+
+// Validate discount code
+export const validateDiscountCode = async (code, total) => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/discounts/validate`,
+      { code, total },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error validating discount code:", error);
     throw error;
   }
 };

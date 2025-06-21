@@ -5,11 +5,13 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
+const morgan = require("morgan");
 
 const AuthRoute = require("./routers/auth.route");
 const UserRoute = require("./routers/user.route");
 const ProductRoute = require("./routers/product.route");
 const OrderRoute = require("./routers/order.route");
+const DiscountRoute = require("./routers/discount.route");
 
 const connectDB = require("./config/db");
 const { connectRedis } = require("./config/redis");
@@ -29,8 +31,9 @@ app.use(
     credentials: true,
   })
 );
+app.use(morgan("dev"));
 app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 // app.use(cookieParser());
 // app.use(mongoSanitize());
 // app.use(xss());
@@ -46,6 +49,7 @@ app.use("/api/", limiter);
 app.use("/api/auth", AuthRoute);
 app.use("/api/users", UserRoute);
 app.use("/api/products", ProductRoute);
+app.use("/api/discounts", DiscountRoute);
 app.use("/api/orders", OrderRoute);
 
 // Error handling middleware

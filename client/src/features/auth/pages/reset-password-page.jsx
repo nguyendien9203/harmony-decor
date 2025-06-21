@@ -25,8 +25,8 @@ import { resetPassword } from "@/features/auth/auth-service";
 // Zod schema for form validation
 const schema = z
   .object({
-    newPassword: z.string().min(6, "Mật khẩu ít nhất 6 ký tự"),
-    confirmPassword: z.string().min(6, "Mật khẩu ít nhất 6 ký tự"),
+    newPassword: z.string().min(8, "Mật khẩu ít nhất 8 ký tự"),
+    confirmPassword: z.string().min(8, "Mật khẩu ít nhất 8 ký tự"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Mật khẩu không khớp",

@@ -25,23 +25,14 @@ const Header = () => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    handleResize(); // Gọi ngay khi component mount
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
 
-  const handleAnchorClick = (e, path) => {
-    const targetId = path.substring(1);
-    const element = document.getElementById(targetId);
-    if (element) {
-      e.preventDefault();
-      element.scrollIntoView({ behavior: "smooth" });
-      // Thêm hash vào URL nếu cần
-      window.history.pushState(null, "", path);
-    }
-  };
+  const productCount = cart.length;
 
   const productCount = cart.length;
 
@@ -63,32 +54,19 @@ const Header = () => {
 
           {/* Navigation Menu */}
           <nav className="hidden md:flex space-x-6 h-full items-center text-sm font-medium text-black">
-            {NAVIGATION_MENU.map(({ label, path, isAnchor }, index) => {
-              if (isAnchor) {
-                return (
-                  <a
-                    key={index}
-                    href={path}
-                    onClick={(e) => handleAnchorClick(e, path)}
-                    className="h-full flex items-center transition-colors text-gray-700 hover:text-black hover:font-semibold cursor-pointer"
-                  >
-                    {label}
-                  </a>
-                );
-              } else {
-                const isActive = location.pathname === path;
-                return (
-                  <Link
-                    key={index}
-                    to={path}
-                    className={`h-full flex items-center transition-colors text-gray-700 hover:text-black hover:font-semibold cursor-pointer ${
-                      isActive ? "text-black font-semibold" : ""
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                );
-              }
+            {NAVIGATION_MENU.map(({ label, path }, index) => {
+              const isActive = location.pathname === path;
+              return (
+                <Link
+                  key={index}
+                  to={path}
+                  className={`h-full flex items-center transition-colors text-gray-700 hover:text-black hover:font-semibold cursor-pointer ${
+                    isActive ? "text-black font-semibold" : ""
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
             })}
           </nav>
         </div>

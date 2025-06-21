@@ -11,11 +11,19 @@ export const login = async (email, password) => {
       email,
       password,
     });
+
+    const { accessToken } = response.data;
+  if (!accessToken) {
+     throw new Error("Token không được trả về từ server");
+  }
+localStorage.setItem("token", accessToken);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
 };
+
+
 
 // Register a new user
 export const register = async (userData) => {

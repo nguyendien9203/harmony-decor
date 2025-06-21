@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const decoded = jwtDecode(token);
       const userInfo = await getUserInfo(); // Gọi API lấy user detail
+      console.log("userInfo", userInfo); // Thêm log để kiểm tra
       setUser({ ...decoded, ...userInfo });
     } catch (err) {
       console.error("Token không hợp lệ hoặc lỗi lấy user info:", err);
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{ user, loading, login, verifyEmail, logout, isAuthenticated }}
     >
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

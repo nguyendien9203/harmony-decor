@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Plus,
   Minus,
@@ -14,6 +14,7 @@ import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { getProductBySlug } from "@/features/product/home-service";
 
 import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/hooks/use-auth";
 
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -26,8 +27,18 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchProduct = async () => {
       try {
         const response = await getProductBySlug(slug);
@@ -38,17 +49,37 @@ const ProductDetailPage = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
-  }, [slug]);
+  }, [slug, isAuthenticated]);
 
   const handleIncrease = () => setQuantity((prev) => prev + 1);
 
   const handleDecrease = () => setQuantity((prev) => Math.max(prev - 1, 1));
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
     if (!product) return;
 
+    const item = {
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      images: product.images,
+    };
+
+    addToCart(item);
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    if (!product) return;
     const item = {
       id: product._id,
       name: product.name,
@@ -72,16 +103,6 @@ const ProductDetailPage = () => {
             alt={product.name}
             className="w-full h-[400px] object-cover rounded-xl mb-4"
           />
-          {/* <div className="flex gap-4">
-            {product.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`thumb-${idx}`}
-                className="w-20 h-20 object-cover rounded-lg border hover:ring-2 hover:ring-black"
-              />
-            ))}
-          </div> */}
         </div>
 
         {/* Right: Product info */}
@@ -145,7 +166,10 @@ const ProductDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-              <Button className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md">
+              <Button
+                className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md"
+                onClick={handleBuyNow}
+              >
                 <Zap className="w-4 h-4" />
                 <span className="text-base font-medium">Mua Ngay</span>
               </Button>
@@ -181,8 +205,8 @@ const ProductDetailPage = () => {
                       (product.description.length > 300 ? "..." : "")
                 }
                 readOnly={true}
-                theme="bubble" // hoặc "snow" tùy thích, "bubble" nhẹ hơn
-                modules={{ toolbar: false }} // ẩn toolbar khi chỉ xem
+                theme="bubble"
+                modules={{ toolbar: false }}
               />
             </div>
           </div>
