@@ -57,6 +57,8 @@ const RegisterPage = () => {
   });
 
   const onSubmit = async (data) => {
+    if (loading || !agreed) return;
+    setLoading(true);
     try {
       const payload = {
         name: data.name,
@@ -65,21 +67,18 @@ const RegisterPage = () => {
         phone: data.phone,
       };
 
-      setLoading(true);
       const response = await registerApi(payload);
 
       toast.success(
         response?.message ||
           "Đăng ký thành công! Vui lòng xác minh email của bạn."
       );
-      setLoading(false);
 
       // Redirect to verification page
       navigate("/verify?from=verification-email", {
         state: { email: data.email },
       });
     } catch (error) {
-      setLoading(false);
       const message = error?.message || "Đăng ký thất bại! Vui lòng thử lại.";
       toast.error("Lỗi đăng ký:", {
         description: message,

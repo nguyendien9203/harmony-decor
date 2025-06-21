@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,21 +20,24 @@ import { useAuth } from "@/hooks/use-auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const from = location.state?.from || "/";
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
+    setLoading(true);
     try {
-      setLoading(true);
       const response = await login(email, password);
       toast.success(response?.message || "Đăng nhập thành công!");
-      setLoading(false);
-      navigate("/", { replace: true });
+
+      navigate(from, { replace: true });
     } catch (error) {
       setLoading(false);
       const message = error?.message || "Đăng nhập thất bại! Vui lòng thử lại.";

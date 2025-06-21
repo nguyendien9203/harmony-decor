@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import SearchBar from "@/features/product/components/search-bar";
 import SortSelect from "@/features/product/components/sort-select";
 import PaginationControls from "@/features/product/components/pagination-controls";
-import ProductCard from "@/features/product/components/product-cart";
+import ProductItem from "@/features/product/components/product-item";
 
 import { getAllProducts } from "@/features/product/home-service";
 
@@ -48,7 +48,7 @@ export default function ProductList() {
   return (
     <section
       id="collection"
-      className="w-full p-6 max-w-7xl mx-auto flex flex-col items-center mt-12"
+      className="w-full pt-6 max-w-7xl mx-auto flex flex-col items-center mt-12"
     >
       <h2 className="text-3xl font-semibold mb-8">Bộ sưu tập</h2>
 
@@ -63,7 +63,7 @@ export default function ProductList() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 justify-center">
         {products.map((product) => (
-          <ProductCard key={product._id || product.id} id={product._id || product.id} {...product} />
+          <ProductItem key={product._id} id={product._id} product={product} />
         ))}
       </div>
 
