@@ -108,7 +108,18 @@ const AdminDashboard = () => {
     yField: 'revenue',
     point: { size: 5, shape: 'diamond' },
     label: { style: { fill: '#aaa' } },
-    tooltip: { formatter: (d) => ({ name: 'Doanh thu', value: d.revenue.toLocaleString() + '₫' }) },
+    tooltip: {
+      title: (title) => `Ngày: ${title}`,
+      customItems: (items) => {
+        return items.map((item) => {
+          return {
+            ...item,
+            name: "Doanh thu",
+            value: item.value ? Number(item.value).toLocaleString() + "₫" : "0₫",
+          };
+        });
+      },
+    },
     smooth: true,
     color: '#3f8600',
     height: 320,
