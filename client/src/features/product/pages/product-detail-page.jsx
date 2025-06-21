@@ -80,18 +80,15 @@ const ProductDetailPage = () => {
       return;
     }
     if (!product) return;
-    const realId = product._id || product.id;
-    const realImage = Array.isArray(product.images)
-      ? product.images[0]
-      : product.images;
     const item = {
-      id: realId,
+      id: product._id,
       name: product.name,
       price: product.price,
-      image: realImage,
       quantity,
+      images: product.images,
     };
-    navigate("/checkout", { state: { items: [item] } });
+
+    addToCart(item);
   };
 
   if (loading) return <FullscreenLoader />;
