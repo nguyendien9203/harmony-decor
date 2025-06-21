@@ -34,8 +34,6 @@ const Header = () => {
 
   const productCount = cart.length;
 
-  const productCount = cart.length;
-
   return (
     <header className="sticky top-0 z-50 py-1 px-6 bg-white">
       <div className="container mx-auto w-full flex items-center justify-between px-4 lg:px-[130px] h-[100px]">
