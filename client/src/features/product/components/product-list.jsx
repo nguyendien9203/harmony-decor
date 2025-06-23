@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SearchBar from "@/features/product/components/search-bar";
 import SortSelect from "@/features/product/components/sort-select";
-import PaginationControls from "@/features/product/components/pagination-controls";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import ProductItem from "@/features/product/components/product-item";
 
 import { getAllProducts } from "@/features/product/home-service";

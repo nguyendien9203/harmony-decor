@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import Logo from "@/assets/harmony-decor.svg";
-import { useLocation, Link, useNavigate } from "react-router-dom";
-import { NAVIGATION_MENU } from "@/constants/navigation";
+import Logo from "@/assets/harmony-decor-logo.svg";
+import { Link, useNavigate } from "react-router-dom";
+import { getAccountMenuItems, NAVIGATION_MENU } from "@/constants/navigation";
 import { ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -13,12 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/contexts/cart-context";
+import { useScrollToSection } from "@/hooks/use-scroll-to";
 
 const Header = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
   const { cart } = useCart();
+  const { handleMenuClick } = useScrollToSection();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ const Header = () => {
   }, []);
 
   const productCount = cart.length;
+  const menuItems = getAccountMenuItems(logout, navigate);
 
   return (
     <header className="sticky top-0 z-50 py-1 px-6 bg-white">
@@ -52,20 +55,15 @@ const Header = () => {
 
           {/* Navigation Menu */}
           <nav className="hidden md:flex space-x-6 h-full items-center text-sm font-medium text-black">
-            {NAVIGATION_MENU.map(({ label, path }, index) => {
-              const isActive = location.pathname === path;
-              return (
-                <Link
-                  key={index}
-                  to={path}
-                  className={`h-full flex items-center transition-colors text-gray-700 hover:text-black hover:font-semibold cursor-pointer ${
-                    isActive ? "text-black font-semibold" : ""
-                  }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
+            {NAVIGATION_MENU.map(({ label, id }, index) => (
+              <span
+                key={index}
+                onClick={() => handleMenuClick(id)}
+                className="h-full flex items-center cursor-pointer transition-colors text-gray-700 hover:text-black hover:font-semibold"
+              >
+                {label}
+              </span>
+            ))}
           </nav>
         </div>
 
@@ -82,9 +80,12 @@ const Header = () => {
             </Button>
 
             {productCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-semibold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+              <Badge
+                variant="destructive"
+                className="absolute -top-0.5 -right-0.5 text-white w-4 h-4 flex items-center justify-center text-[10px] font-semibold rounded-full"
+              >
                 {productCount}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -96,17 +97,20 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 z-50">
                 {isMobile &&
-                  NAVIGATION_MENU.map(({ label, path }, index) => (
-                    <DropdownMenuItem asChild key={index}>
-                      <Link to={path}>{label}</Link>
+                  NAVIGATION_MENU.map(({ label, id }, index) => (
+                    <DropdownMenuItem
+                      key={index}
+                      onClick={() => handleMenuClick(id)}
+                    >
+                      {label}
                     </DropdownMenuItem>
                   ))}
 
                 {isMobile && <DropdownMenuSeparator />}
 
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link to="/orders">Đơn hàng</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -119,7 +123,25 @@ const Header = () => {
                   }}
                 >
                   Đăng xuất
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
+
+                {menuItems.map(({ label, path, onClick }, index) =>
+                  onClick ? (
+                    <DropdownMenuItem
+                      key={index}
+                      onClick={onClick}
+                      className="cursor-pointer"
+                    >
+                      {label}
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem key={index} asChild>
+                      <Link to={`/${path}`} className="w-full cursor-pointer">
+                        {label}
+                      </Link>
+                    </DropdownMenuItem>
+                  )
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

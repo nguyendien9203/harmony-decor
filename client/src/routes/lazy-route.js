@@ -10,11 +10,8 @@ export const CartPage = lazy(() => import("@/features/cart/pages/cart-page"));
 export const CheckoutPage = lazy(() =>
   import("@/features/checkout/pages/checkout-page")
 );
-export const OrderListPage = lazy(() =>
-  import("@/features/order/pages/order-list-page")
-);
-export const OrderDetailPage = lazy(() =>
-  import("@/features/order/pages/order-detail-page")
+export const OrderPage = lazy(() =>
+  import("@/features/order/pages/order-page")
 );
 export const OrderSuccessPage = lazy(() =>
   import("@/features/order/pages/order-success-page")
@@ -25,7 +22,9 @@ export const PaymentFailedPage = lazy(() =>
 export const VnpayReturnPage = lazy(() =>
   import("@/features/payment/components/vnpay-return")
 );
-
+export const ProfilePage = lazy(() =>
+  import("@/features/user/pages/profile-page")
+);
 export const LoginPage = lazy(() => import("@/features/auth/pages/login-page"));
 export const RegisterPage = lazy(() =>
   import("@/features/auth/pages/register-page")

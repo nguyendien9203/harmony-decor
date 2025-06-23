@@ -4,6 +4,7 @@ import * as Lazy from "@/routes/lazy-route";
 
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import MainLayout from "@/layouts/main-layout";
+import AccountLayout from "@/layouts/account-layout";
 
 import AdminRoute from "@/routes/admin-route";
 import PrivateRoute from "@/routes/private-route";
@@ -117,6 +118,27 @@ export const router = createBrowserRouter([
                 <Lazy.PaymentFailedPage />
               </Suspense>
             ),
+          },
+          {
+            element: <AccountLayout />,
+            children: [
+              {
+                path: "profile",
+                element: (
+                  <Suspense fallback={<FullscreenLoader />}>
+                    <Lazy.ProfilePage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: "orders",
+                element: (
+                  <Suspense fallback={<FullscreenLoader />}>
+                    <Lazy.OrderPage />
+                  </Suspense>
+                ),
+              },
+            ],
           },
         ],
       },

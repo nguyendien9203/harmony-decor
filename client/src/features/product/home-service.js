@@ -8,7 +8,7 @@ const BASE_URL = `${API_BASE_URL}/products`;
 export const getAllProducts = async ({ page, search, sort }) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { page, search, sort, status: "ACTIVE" },
+      params: { page, search, sort, status: ["ACTIVE", "OUT_OF_STOCK"] },
     });
     return response.data;
   } catch (error) {
