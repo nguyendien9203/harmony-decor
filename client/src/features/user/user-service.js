@@ -15,3 +15,16 @@ export const getUserInfo = async () => {
     throw error.response?.data || error.message;
   }
 };
+
+// Update user information
+export const updateUserInfo = async (formData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/user-info`, formData, {
+      headers: { "Content-Type": "multipart/form-data", ...getAuthHeaders() },
+    });
+
+    return response.data.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
