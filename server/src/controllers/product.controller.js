@@ -59,14 +59,27 @@ exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = 6;
+
     const { search = "", status, sort } = req.query;
+
     let query = {};
+
     if (search) query.name = { $regex: search, $options: "i" };
-    if (status) query.status = status;
+
+    if (status) {
+      if (Array.isArray(status)) {
+        query.status = { $in: status };
+      } else {
+        query.status = status;
+      }
+    }
+
     let sortOption = {};
+
     if (sort === "asc") sortOption.price = 1;
     else if (sort === "desc") sortOption.price = -1;
     else sortOption.createdAt = -1;
+
     const totalProducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalProducts / limit);
     const products = await Product.find(query)

@@ -139,6 +139,9 @@ exports.handlePaymentReturn = async (req, res) => {
       } else {
         if (order) {
           order.paymentStatus = "FAILED";
+          order.paidAt = null;
+          order.transactionId = null;
+          order.orderStatus = "CANCELLED";
           await order.save();
         }
 
