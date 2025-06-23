@@ -15,5 +15,11 @@ exports.formatOrder = (orderDoc) => {
     totalAmount: orderDoc.totalAmount,
     paymentMethod: orderDoc.paymentMethod,
     shippingAddress: orderDoc.shippingAddress,
+    userId: orderDoc.userId,
+    orderStatus: orderDoc.orderStatus,
+    paymentStatus: orderDoc.paymentStatus,
+    paidAt: orderDoc.paidAt,
+    transactionId: orderDoc.transactionId,
+    note: orderDoc.note,
   };
 };

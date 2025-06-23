@@ -14,6 +14,14 @@ router.post(
   orderController.createOrder
 );
 
+// Lấy đơn hàng của user
+router.get(
+  "/get-orders-by-user",
+  authenticateToken,
+  requireRole(["USER"]),
+  orderController.getOrdersByUser
+);
+
 // Lấy tất cả đơn hàng (admin)
 router.get(
   "/",
@@ -22,17 +30,14 @@ router.get(
   orderController.getAllOrders
 );
 
-// Lấy đơn hàng của user
-router.get("/user", authenticateToken, orderController.getOrdersByUser);
-
 // Lấy chi tiết đơn hàng
 router.get("/:id", authenticateToken, orderController.getOrderById);
 
-// Cập nhật trạng thái đơn hàng (admin)
+// Cập nhật trạng thái đơn hàng (admin + user)
 router.patch(
   "/:id",
   authenticateToken,
-  requireRole(["ADMIN"]),
+  requireRole(["ADMIN", "USER"]),
   orderController.updateOrderStatus
 );
 

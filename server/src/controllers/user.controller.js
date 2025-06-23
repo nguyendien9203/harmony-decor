@@ -5,7 +5,6 @@ const fs = require("fs");
 // Get user info
 exports.getUserInfo = async (req, res) => {
   try {
-
     const user = await User.findById(req.user.userId).select("-password");
 
     if (!user) {
@@ -15,23 +14,22 @@ exports.getUserInfo = async (req, res) => {
       });
     }
 
-    const { _id, name, email, roles } = user;
-
     res.status(200).json({
       success: true,
-      data: { _id, name, email, roles },
+      data: user,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 exports.updateUserInfo = async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: "Không tìm thấy người dùng" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
     }
 
     Object.assign(user, req.body);
@@ -46,7 +44,7 @@ exports.updateUserInfo = async (req, res) => {
         ],
       });
       user.avatar = result.secure_url;
-      fs.unlinkSync(req.file.path); 
+      fs.unlinkSync(req.file.path);
     }
 
     await user.save();
@@ -54,16 +52,24 @@ exports.updateUserInfo = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Cập nhật thông tin thành công",
+      user: user.toObject(),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 exports.getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 6, status, role, verified, search, sort } = req.query;
+    const {
+      page = 1,
+      limit = 6,
+      status,
+      role,
+      verified,
+      search,
+      sort,
+    } = req.query;
     const skip = (page - 1) * limit;
 
     const filter = {};
@@ -204,13 +210,11 @@ exports.createUser = async (req, res) => {
     const userObj = user.toObject();
     delete userObj.password;
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Tạo người dùng thành công",
-        data: { user: userObj },
-      });
+    res.status(201).json({
+      success: true,
+      message: "Tạo người dùng thành công",
+      data: { user: userObj },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -259,12 +263,10 @@ exports.updateStatus = async (req, res) => {
       { status: req.body.status },
       { new: true, runValidators: true }
     );
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Cập nhật trạng thái người dùng thành công",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật trạng thái người dùng thành công",
+    });
   } catch (error) {
     res
       .status(500)
@@ -278,12 +280,10 @@ exports.updateRole = async (req, res) => {
       { roles: req.body.roles },
       { new: true, runValidators: true }
     );
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Cập nhật vai trò người dùng thành công",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật vai trò người dùng thành công",
+    });
   } catch (error) {
     res
       .status(500)

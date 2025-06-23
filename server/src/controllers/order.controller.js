@@ -95,6 +95,46 @@ exports.createOrder = async (req, res) => {
   }
 };
 
+// Get orders by user (user)
+exports.getOrdersByUser = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const userId = req.user.userId;
+    const { status } = req.query;
+    const limit = 2;
+
+    console.log("Status filter:", status);
+
+    let query = {};
+
+    if (status && status !== "ALL") {
+      query.orderStatus = status;
+    }
+
+    const totalOrders = await Order.countDocuments({ userId, ...query });
+    const totalPages = Math.ceil(totalOrders / limit);
+    const orders = await Order.find({ userId, ...query })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate("items.productId", "name price images")
+      .exec();
+
+    res.status(200).json({
+      message: "Lấy đơn hàng của bạn thành công",
+      orders: orders.map(formatOrder),
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalOrders,
+        limit,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Lấy tất cả đơn hàng (admin)
 exports.getAllOrders = async (req, res) => {
   try {
@@ -135,20 +175,6 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
-// Lấy đơn hàng theo user (user)
-exports.getOrdersByUser = async (req, res) => {
-  try {
-    const orders = await Order.find({ userId: req.user._id }).sort({
-      createdAt: -1,
-    });
-    res.json({ message: "Lấy đơn hàng của bạn thành công", orders });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Lỗi lấy đơn hàng của bạn", error: error.message });
-  }
-};
-
 // Lấy chi tiết đơn hàng theo ID (user hoặc admin)
 exports.getOrderById = async (req, res) => {
   try {
@@ -174,7 +200,7 @@ exports.getOrderById = async (req, res) => {
   }
 };
 
-// Cập nhật trạng thái đơn hàng + thanh toán (admin)
+// Cập nhật trạng thái đơn hàng + thanh toán (admin + user)
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderStatus } = req.body;
