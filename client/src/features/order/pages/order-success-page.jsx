@@ -75,7 +75,7 @@ const OrderSuccessPage = () => {
             </div>
 
             <Link
-              to="/"
+              to="/orders"
               className="text-blue-600 text-sm font-semibold block mt-1"
             >
               Kiểm tra trạng thái đơn hàng

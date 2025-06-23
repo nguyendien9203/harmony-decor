@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,12 +34,12 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      const response = await login(email, password);
-      if (user.roles === "ADMIN") {
-        toast.success(response?.message || "Đăng nhập thành công!");
-        navigate("/admin", { replace: true });
-      } else if (user.roles === "USER") {
-        toast.success(response?.message || "Đăng nhập thành công!");
+      const { roles, message } = await login(email, password);
+      if (roles === "ADMIN") {
+        toast.success(message || "Đăng nhập thành công!");
+        navigate("/admin/dashboard", { replace: true });
+      } else if (roles === "USER") {
+        toast.success(message || "Đăng nhập thành công!");
         navigate(from, { replace: true });
       }
     } catch (error) {

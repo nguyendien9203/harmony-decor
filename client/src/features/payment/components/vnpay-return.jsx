@@ -21,7 +21,6 @@ const VnpayReturn = () => {
       try {
         const response = await handlePaymentReturn(queryParams);
         if (response.status === 200) {
-          toast.success("Thanh toán thành công!");
           const order = response.order;
           navigate("/order-success", {
             state: { order, transactionId },

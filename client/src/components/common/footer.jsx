@@ -1,7 +1,10 @@
 import { Separator } from "@/components/ui/separator";
-import { Facebook, Instagram, Mail, Phone } from "lucide-react";
+import { Facebook, Mail, Phone } from "lucide-react";
+import { NAVIGATION_MENU } from "@/constants/navigation";
+import { useScrollToSection } from "@/hooks/use-scroll-to";
 
 export default function Footer() {
+  const { handleMenuClick } = useScrollToSection();
   return (
     <footer className="bg-black text-white px-6 py-10">
       <div className="max-w-7xl w-full mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 px-4 md:px-8 ">
@@ -18,22 +21,15 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Menu</h3>
           <ul className="space-y-1 text-sm text-gray-300">
-            <li>
-              <a href="/" className="hover:underline">
-                Trang chủ
-              </a>
-            </li>
-            <li>
-              <a href="/aboutus" className="hover:underline">
-                Về chúng tôi
-              </a>
-            </li>
-            <li>
-              <a href="/collection" className="hover:underline">
-                Bộ sưu tập
-              </a>
-            </li>
-            <li></li>
+            {NAVIGATION_MENU.map(({ label, id }, index) => (
+              <li
+                key={index}
+                onClick={() => handleMenuClick(id)}
+                className="cursor-pointer hover:underline"
+              >
+                {label}
+              </li>
+            ))}
           </ul>
         </div>
 
@@ -41,11 +37,6 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Hỗ trợ</h3>
           <ul className="space-y-1 text-sm text-gray-300">
-            <li>
-              <a href="/faq" className="hover:underline">
-                Câu hỏi thường gặp
-              </a>
-            </li>
             <li>
               <a href="/privacy" className="hover:underline">
                 Chính sách bảo mật
@@ -64,17 +55,17 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-2">Liên hệ</h3>
           <ul className="space-y-2 text-sm text-gray-300">
             <li className="flex items-center gap-2">
-              <Phone className="w-4 h-4" /> +84 123 456 789
+              <Phone className="w-4 h-4" /> +84 988 043 093
             </li>
             <li className="flex items-center gap-2">
               <Mail className="w-4 h-4" /> harmonydecor101@gmail.com
             </li>
-            <li className="flex items-center gap-3 pt-2">
-              <a href="#" className="hover:text-white">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href="#" className="hover:text-white">
-                <Instagram className="w-4 h-4" />
+            <li>
+              <a
+                href="https://www.facebook.com/harmonydecor.space"
+                className="hover:text-white flex items-center gap-2 text-gray-300 hover:underline"
+              >
+                <Facebook className="w-4 h-4" /> Harmony Decor
               </a>
             </li>
           </ul>

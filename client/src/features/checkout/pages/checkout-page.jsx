@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
@@ -27,10 +27,11 @@ import {
 import { createOrder } from "@/features/order/order-service";
 import { createPayment } from "@/features/payment/payment-service";
 import { useCart } from "@/contexts/cart-context";
+import { useBuyNow } from "@/contexts/buy-now-context";
 
 import clsx from "clsx";
 import { toast } from "sonner";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ShoppingCart } from "lucide-react";
 
 const checkoutSchema = z.object({
   recipientName: z.string().min(1, "Vui lòng nhập họ tên người nhận"),
@@ -65,10 +66,10 @@ const paymentMethods = [
 ];
 
 const CheckoutPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart, clearCart } = useCart();
-  const items = location.state?.items || [];
+  const { buyNowItem } = useBuyNow();
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -82,6 +83,10 @@ const CheckoutPage = () => {
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
+
+  const items = location.state?.items || [];
+
+  const itemsToCheckout = buyNowItem ? [buyNowItem] : items;
 
   // Fetch provinces
   useEffect(() => {
@@ -133,7 +138,7 @@ const CheckoutPage = () => {
   }, [selectedDistrictId]);
 
   // Calculate total price of items in the cart
-  const total = items.reduce(
+  const total = itemsToCheckout.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
@@ -194,7 +199,7 @@ const CheckoutPage = () => {
       const totalAmount = total - discountAmount;
 
       const orderData = {
-        items: items.map(({ id, quantity, price }) => ({
+        items: itemsToCheckout.map(({ id, quantity, price }) => ({
           productId: id,
           quantity,
           price,
@@ -255,10 +260,21 @@ const CheckoutPage = () => {
 
   if (loading) return <FullscreenLoader />;
 
-  // If no items in cart, redirect to cart page
-  if (!items || items.length === 0) {
-    navigate("/cart");
-    return null;
+  if (!buyNowItem && cart.length === 0) {
+    return (
+      <div className="container mx-auto py-12 flex flex-col items-center">
+        <ShoppingCart className="w-16 h-16 text-gray-400 mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Không có sản phẩm để thanh toán
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Hãy chọn sản phẩm để mua hoặc thêm vào giỏ hàng.
+        </p>
+        <Button asChild>
+          <Link to="/">Tiếp tục mua sắm</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -453,7 +469,7 @@ const CheckoutPage = () => {
           <CardContent className="flex flex-col flex-grow">
             {/* Cart Items */}
             <div className="space-y-3 divide-y flex-grow mb-4">
-              {cart.map(({ id, name, images, price, quantity }) => (
+              {itemsToCheckout.map(({ id, name, images, price, quantity }) => (
                 <div key={id} className="flex justify-between items-center">
                   <div className="flex gap-3 items-center w-full">
                     {/* Product Image*/}
