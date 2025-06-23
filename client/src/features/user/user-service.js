@@ -10,7 +10,7 @@ export const getUserInfo = async () => {
     const response = await axios.get(`${BASE_URL}/user-info`, {
       headers: getAuthHeaders(),
     });
-    return response.data;
+    return response.data.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }

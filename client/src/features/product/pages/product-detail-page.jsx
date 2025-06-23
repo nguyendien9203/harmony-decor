@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Plus,
   Minus,
@@ -9,18 +9,22 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { getProductBySlug } from "@/features/product/home-service";
 
 import { useCart } from "@/contexts/cart-context";
+import { useBuyNow } from "@/contexts/buy-now-context";
+import { formatCurrency } from "@/utils/format";
 
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 const ProductDetailPage = () => {
+  const navigate = useNavigate();
   const { slug } = useParams();
   const { addToCart } = useCart();
+  const { setBuyNowItem } = useBuyNow();
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -38,9 +42,10 @@ const ProductDetailPage = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [slug]);
+
+  const isOutOfStock = product?.status === "OUT_OF_STOCK";
 
   const handleIncrease = () => setQuantity((prev) => prev + 1);
 
@@ -60,28 +65,43 @@ const ProductDetailPage = () => {
     addToCart(item);
   };
 
+  const handleBuyNow = () => {
+    if (!product) return;
+
+    const item = {
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      images: product.images,
+    };
+
+    setBuyNowItem(item);
+    navigate("/checkout");
+  };
+
   if (loading) return <FullscreenLoader />;
 
   return (
     <section className="max-w-6xl mx-auto p-6 bg-white rounded-2xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left: Images */}
-        <div>
+        <div className="relative">
           <img
             src={product.images}
             alt={product.name}
-            className="w-full h-[400px] object-cover rounded-xl mb-4"
+            className={`w-full h-[400px] object-cover rounded-xl mb-4 ${
+              isOutOfStock ? "opacity-60 grayscale" : ""
+            }`}
           />
-          {/* <div className="flex gap-4">
-            {product.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`thumb-${idx}`}
-                className="w-20 h-20 object-cover rounded-lg border hover:ring-2 hover:ring-black"
-              />
-            ))}
-          </div> */}
+          {isOutOfStock && (
+            <Badge
+              variant="destructive"
+              className="absolute top-2 right-2 text-white"
+            >
+              Hết hàng
+            </Badge>
+          )}
         </div>
 
         {/* Right: Product info */}
@@ -108,10 +128,7 @@ const ProductDetailPage = () => {
             <div className="flex items-center justify-between mb-6">
               {/* Price */}
               <p className="text-3xl font-bold text-gray-900">
-                {new Intl.NumberFormat("vn-VN", {
-                  style: "currency",
-                  currency: "VND",
-                }).format(product.price)}
+                {formatCurrency(product.price)}
               </p>
 
               {/* Quantity */}
@@ -122,7 +139,7 @@ const ProductDetailPage = () => {
                     variant="ghost"
                     size="icon"
                     onClick={handleDecrease}
-                    className="text-lg font-bold px-2"
+                    className="text-lg font-bold px-2 cursor-pointer"
                   >
                     <Minus className="w-4 h-4" />
                   </Button>
@@ -135,7 +152,7 @@ const ProductDetailPage = () => {
                     variant="ghost"
                     size="icon"
                     onClick={handleIncrease}
-                    className="text-lg font-bold px-2"
+                    className="text-lg font-bold px-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -145,14 +162,19 @@ const ProductDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-              <Button className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md">
+              <Button
+                className="flex-1 flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800 h-12 rounded-md cursor-pointer"
+                onClick={handleBuyNow}
+                disabled={isOutOfStock}
+              >
                 <Zap className="w-4 h-4" />
                 <span className="text-base font-medium">Mua Ngay</span>
               </Button>
               <Button
                 variant="outline"
                 onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-2 h-12 rounded-md"
+                disabled={isOutOfStock}
+                className="flex-1 flex items-center justify-center gap-2 h-12 rounded-md cursor-pointer0"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span className="text-base font-medium">Thêm vào giỏ hàng</span>
@@ -166,7 +188,7 @@ const ProductDetailPage = () => {
                 {product.description.length > 300 && (
                   <button
                     onClick={() => setShowFullDescription((prev) => !prev)}
-                    className="text-sm text-primary underline"
+                    className="text-sm text-primary underline cursor-pointer"
                   >
                     {showFullDescription ? "Thu gọn" : "Xem thêm"}
                   </button>
@@ -181,8 +203,8 @@ const ProductDetailPage = () => {
                       (product.description.length > 300 ? "..." : "")
                 }
                 readOnly={true}
-                theme="bubble" // hoặc "snow" tùy thích, "bubble" nhẹ hơn
-                modules={{ toolbar: false }} // ẩn toolbar khi chỉ xem
+                theme="bubble"
+                modules={{ toolbar: false }}
               />
             </div>
           </div>

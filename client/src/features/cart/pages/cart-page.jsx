@@ -1,4 +1,3 @@
-// src/pages/CartPage.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,7 +30,7 @@ const CartPage = () => {
 
   if (!cart || cart.length === 0) {
     return (
-      <div className="container mx-auto py-12 flex flex-col items-center min-h-[60vh]">
+      <div className="container mx-auto py-12 flex flex-col items-center">
         <ShoppingCart className="w-16 h-16 text-gray-400 mb-4" />
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
           Giỏ hàng của bạn trống

@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const decoded = jwtDecode(token);
-      const userInfo = await getUserInfo(); // Gọi API lấy user detail
+      const userInfo = await getUserInfo();
       setUser({ ...decoded, ...userInfo });
     } catch (err) {
       console.error("Token không hợp lệ hoặc lỗi lấy user info:", err);
@@ -45,18 +45,23 @@ export const AuthProvider = ({ children }) => {
   }, [setUserFromToken]);
 
   // Handle token response and set user
-  const handleTokenResponse = useCallback(
-    async (token) => {
-      localStorage.setItem("accessToken", token);
-      await setUserFromToken();
-    },
-    [setUserFromToken]
-  );
+  const handleTokenResponse = useCallback(async (token) => {
+    localStorage.setItem("accessToken", token);
+    const decoded = jwtDecode(token);
+    const userInfo = await getUserInfo();
+    const mergedUser = { ...decoded, ...userInfo };
+    setUser(mergedUser);
+    return mergedUser;
+  }, []);
 
   const login = useCallback(
     async (email, password) => {
       const response = await performLogin(email, password);
-      await handleTokenResponse(response.accessToken);
+      const user = await handleTokenResponse(response.accessToken);
+      return {
+        roles: user.roles,
+        message: response.message,
+      };
     },
     [handleTokenResponse]
   );
@@ -75,9 +80,17 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, verifyEmail, logout, isAuthenticated }}
+      value={{
+        user,
+        setUser,
+        loading,
+        login,
+        verifyEmail,
+        logout,
+        isAuthenticated,
+      }}
     >
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

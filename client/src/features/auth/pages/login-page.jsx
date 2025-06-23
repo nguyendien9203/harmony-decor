@@ -34,10 +34,14 @@ const LoginPage = () => {
 
     setLoading(true);
     try {
-      const response = await login(email, password);
-      toast.success(response?.message || "Đăng nhập thành công!");
-
-      navigate(from, { replace: true });
+      const { roles, message } = await login(email, password);
+      if (roles === "ADMIN") {
+        toast.success(message || "Đăng nhập thành công!");
+        navigate("/admin/dashboard", { replace: true });
+      } else if (roles === "USER") {
+        toast.success(message || "Đăng nhập thành công!");
+        navigate(from, { replace: true });
+      }
     } catch (error) {
       setLoading(false);
       const message = error?.message || "Đăng nhập thất bại! Vui lòng thử lại.";

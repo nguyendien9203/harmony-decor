@@ -1,4 +1,8 @@
-import slider1 from "@/assets/slider/slider1.png";
+import img1 from "@/assets/images/decor-ban-lam-viec.webp";
+import img2 from "@/assets/images/phong-cach-hien-dai-ca-tinh.webp";
+import img3 from "@/assets/images/decor-cay-canh-de-ban.webp";
+import img4 from "@/assets/images/phong-cach-toi-gian-thanh-lich.webp";
+import img5 from "@/assets/images/hop-dung-but.webp";
 
 export default function AboutUs() {
   return (
@@ -13,7 +17,7 @@ export default function AboutUs() {
         {/* Left 2/3 */}
         <div className="md:col-span-2 relative h-64 md:h-96 rounded-xl overflow-hidden w-full">
           <img
-            src={slider1}
+            src={img1}
             alt="Simulate Study Space"
             className="w-full h-full object-cover"
           />
@@ -30,7 +34,7 @@ export default function AboutUs() {
         {/* Right 1/3 */}
         <div className="relative h-64 md:h-96 rounded-xl overflow-hidden w-full">
           <img
-            src={slider1}
+            src={img2}
             alt="Decor Tools"
             className="w-full h-full object-cover"
           />
@@ -38,7 +42,7 @@ export default function AboutUs() {
             <h2 className="text-lg md:text-xl font-semibold mb-1">
               Công Cụ Decor Đa Dạng
             </h2>
-            <p>Hơn 100+ món đồ decor sẵn sàng cho bạn lựa chọn.</p>
+            <p>Nhiều món đồ decor sẵn sàng cho bạn lựa chọn.</p>
           </div>
         </div>
       </div>
@@ -48,7 +52,7 @@ export default function AboutUs() {
         {/* Item 1 */}
         <div className="relative h-64 rounded-xl overflow-hidden w-full">
           <img
-            src={slider1}
+            src={img3}
             alt="Smart Suggestion"
             className="w-full h-full object-cover"
           />
@@ -63,7 +67,7 @@ export default function AboutUs() {
         {/* Item 2 */}
         <div className="relative h-64 rounded-xl overflow-hidden w-full">
           <img
-            src={slider1}
+            src={img4}
             alt="Community Share"
             className="w-full h-full object-cover"
           />
@@ -78,7 +82,7 @@ export default function AboutUs() {
         {/* Item 3 */}
         <div className="relative h-64 rounded-xl overflow-hidden w-full">
           <img
-            src={slider1}
+            src={img5}
             alt="Realistic Preview"
             className="w-full h-full object-cover"
           />
