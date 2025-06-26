@@ -107,7 +107,10 @@ exports.getProducts = async (req, res) => {
 exports.getProductBySlug = async (req, res) => {
   try {
     const slug = req.params.slug;
-    const product = await Product.findOne({ slug: slug });
+    const product = await Product.findOne({ slug: slug }).populate(
+      "reviews.userId",
+      "name images"
+    );
     if (!product)
       return res
         .status(404)
@@ -199,6 +202,97 @@ exports.deleteProduct = async (req, res) => {
       success: false,
       message: "Lỗi khi xóa sản phẩm",
       error: error.message,
+    });
+  }
+};
+
+// Add review to product
+exports.addReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const userId = req.user.userId;
+
+    const product = await Product.findById(req.params.id);
+    if (!product)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
+
+    const review = {
+      userId,
+      rating: Number(rating),
+      comment,
+    };
+
+    product.reviews.push(review);
+    await product.save();
+
+    const updatedProduct = await Product.findById(req.params.id).populate(
+      "reviews.userId",
+      "name images"
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Đánh giá sản phẩm thành công",
+      data: updatedProduct,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Update review of product
+exports.updateReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const { productId, reviewId } = req.params;
+    const userId = req.user.userId;
+
+    console.log("Updating review:", {
+      productId,
+      reviewId,
+      userId,
+      rating,
+      comment,
+    });
+
+    const product = await Product.findById(productId);
+    if (!product)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy sản phẩm" });
+
+    const review = product.reviews.find(
+      (r) => r._id.toString() === reviewId && r.userId.toString() === userId
+    );
+
+    if (!review)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy đánh giá" });
+
+    review.rating = Number(rating);
+    review.comment = comment;
+    await product.save();
+
+    const updatedProduct = await Product.findById(productId).populate(
+      "reviews.userId",
+      "name images"
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật đánh giá thành công",
+      data: updatedProduct,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };
