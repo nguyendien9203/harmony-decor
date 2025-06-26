@@ -6,16 +6,32 @@ import {
   ShoppingBag,
   Star,
   Zap,
-  ChevronRight,
+  Pencil,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+
 import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
-import { getProductBySlug } from "@/features/product/home-service";
+import {
+  getProductBySlug,
+  addProductReview,
+  updateProductReview,
+} from "@/features/product/home-service";
 
 import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/hooks/use-auth";
 import { useBuyNow } from "@/contexts/buy-now-context";
-import { formatCurrency } from "@/utils/format";
+import { formatCurrency, formatDateTime } from "@/utils/format";
 
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -25,11 +41,17 @@ const ProductDetailPage = () => {
   const { slug } = useParams();
   const { addToCart } = useCart();
   const { setBuyNowItem } = useBuyNow();
+  const { user } = useAuth();
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
+
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -80,6 +102,49 @@ const ProductDetailPage = () => {
     navigate("/checkout");
   };
 
+  const averageRating =
+    product?.reviews?.length > 0
+      ? (
+          product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+          product.reviews.length
+        ).toFixed(1)
+      : 0;
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (!rating || !comment.trim()) {
+      toast.warning("Vui lòng đánh giá và viết nhận xét");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      let response;
+      if (editingReviewId) {
+        response = await updateProductReview(product._id, editingReviewId, {
+          rating,
+          comment,
+        });
+        toast.success("Đã cập nhật đánh giá");
+      } else {
+        response = await addProductReview(product._id, { rating, comment });
+        toast.success("Gửi đánh giá thành công");
+      }
+
+      // reset form
+      setComment("");
+      setRating(0);
+      setEditingReviewId(null);
+      setProduct(response.data);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Đã xảy ra lỗi khi gửi đánh giá"
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) return <FullscreenLoader />;
 
   return (
@@ -109,19 +174,22 @@ const ProductDetailPage = () => {
           <div>
             <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
 
-            <div className="flex items-center gap-1 text-sm font-medium text-gray-800 mb-4">
+            {/* Total rating */}
+            <div className="flex items-center gap-2 mb-4">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <Star
                   key={idx}
-                  className={`w-4 h-4 ${
-                    idx < 4 ? "fill-primary stroke-primary" : "stroke-primary"
+                  className={`w-5 h-5 ${
+                    idx < Math.round(averageRating)
+                      ? "fill-yellow-500 stroke-yellow-500"
+                      : "stroke-gray-300"
                   }`}
                 />
               ))}
-              <span className="ml-2">4.4</span>
-              <span className="text-gray-500">&bull;</span>
-              <span>24 reviews</span>
-              <ChevronRight className="w-4 h-4 ml-1 text-gray-500" />
+              <span className="text-sm text-gray-600">{averageRating} / 5</span>
+              <span className="text-sm text-gray-500 ml-2">
+                ({product.reviews?.length || 0} đánh giá)
+              </span>
             </div>
 
             {/* Price & Quantity on same row */}
@@ -210,6 +278,114 @@ const ProductDetailPage = () => {
           </div>
         </div>
       </div>
+      {/* Danh sách đánh giá */}
+      <div className="space-y-6 mb-8">
+        <h2 className="text-lg font-semibold text-gray-700">Mô tả sản phẩm</h2>
+        {product.reviews?.length === 0 ? (
+          <p className="text-gray-500">
+            Chưa có đánh giá nào cho sản phẩm này.
+          </p>
+        ) : (
+          product.reviews?.map((review, i) => (
+            <div key={i} className="border-b pb-4 relative">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3 mb-2">
+                  <Avatar>
+                    <AvatarImage src={review.userId?.avatar} />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold">
+                      {review.userId?.name || "Người dùng"}
+                    </p>
+                    <div className="flex gap-1">
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <Star
+                          key={j}
+                          className={`w-4 h-4 ${
+                            j < review.rating
+                              ? "fill-yellow-500 stroke-yellow-500"
+                              : "stroke-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ba chấm nếu đúng user */}
+                {user && review.userId?._id === user._id && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-gray-500"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setRating(review.rating);
+                          setComment(review.comment);
+                          setEditingReviewId(review._id); // cần tạo state
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Chỉnh sửa
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+
+              <p className="text-sm text-gray-700">{review.comment}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {formatDateTime(review.createdAt)}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Form gửi đánh giá */}
+      {user ? (
+        <div className="border p-4 rounded-xl">
+          <h3 className="font-semibold mb-2">Viết đánh giá của bạn</h3>
+
+          {/* Rating chọn sao */}
+          <div className="flex items-center gap-2 mb-3">
+            {[1, 2, 3, 4, 5].map((val) => (
+              <Star
+                key={val}
+                onClick={() => setRating(val)}
+                className={`w-6 h-6 cursor-pointer ${
+                  val <= rating
+                    ? "fill-yellow-500 stroke-yellow-500"
+                    : "stroke-gray-300"
+                }`}
+              />
+            ))}
+            <span className="text-sm">{rating} sao</span>
+          </div>
+
+          {/* Comment input */}
+          <Textarea
+            placeholder="Nhận xét của bạn..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="mb-3"
+          />
+
+          <Button onClick={(e) => handleSubmitReview(e)} disabled={submitting}>
+            Gửi đánh giá
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">Vui lòng đăng nhập để đánh giá</p>
+      )}
     </section>
   );
 };

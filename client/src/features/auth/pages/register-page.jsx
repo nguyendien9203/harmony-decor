@@ -195,11 +195,17 @@ const RegisterPage = () => {
                 />
                 <div className="text-sm text-gray-700 leading-tight mb-5">
                   Tôi đã đọc và đồng ý với{" "}
-                  <span className="text-blue-600 underline">
+                  <span
+                    className="text-blue-600 underline cursor-pointer"
+                    onClick={() => navigate("/terms-of-service")}
+                  >
                     Điều khoản sử dụng
                   </span>{" "}
                   và{" "}
-                  <span className="text-blue-600 underline">
+                  <span
+                    className="text-blue-600 underline cursor-pointer"
+                    onClick={() => navigate("/privacy-policy")}
+                  >
                     Chính sách bảo mật
                   </span>{" "}
                   của Harmony Decor

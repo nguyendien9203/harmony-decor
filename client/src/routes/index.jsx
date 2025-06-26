@@ -39,6 +39,22 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      {
+        path: "privacy-policy",
+        element: (
+          <Suspense fallback={<FullscreenLoader />}>
+            <Lazy.PrivacyPolicyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "terms-of-service",
+        element: (
+          <Suspense fallback={<FullscreenLoader />}>
+            <Lazy.TermsOfServicePage />
+          </Suspense>
+        ),
+      },
 
       // Authentication routes
       {
