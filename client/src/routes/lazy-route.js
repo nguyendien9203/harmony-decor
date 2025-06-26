@@ -38,6 +38,12 @@ export const ForgotPasswordPage = lazy(() =>
 export const ResetPasswordPage = lazy(() =>
   import("@/features/auth/pages/reset-password-page")
 );
+export const PrivacyPolicyPage = lazy(() =>
+  import("@/features/legal/pages/privacy-policy-page")
+);
+export const TermsOfServicePage = lazy(() =>
+  import("@/features/legal/pages/terms-of-service-page")
+);
 
 // Admin pages
 export const AdminDashboard = lazy(() =>

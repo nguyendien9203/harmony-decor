@@ -90,6 +90,7 @@ const ProfilePage = () => {
       name: user.name || "",
       phone: user.phone || "",
       email: user.email || "",
+      avatar: null,
     });
   }, [user]);
 
@@ -126,7 +127,6 @@ const ProfilePage = () => {
     if (loading) return;
     setLoading(true);
     try {
-      console.log("Updating user info with data:", data);
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("phone", data.phone);
@@ -138,9 +138,10 @@ const ProfilePage = () => {
       const response = await updateUserInfo(formData);
 
       toast.success(response?.message || "Cập nhật thành công!");
-      setUser(response.data.user);
+      setUser(response.data);
       setPreview("");
     } catch (error) {
+      setPreview("");
       toast.error(error?.response?.data?.message || "Cập nhật thất bại");
     } finally {
       setLoading(false);

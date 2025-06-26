@@ -20,10 +20,13 @@ export const getUserInfo = async () => {
 export const updateUserInfo = async (formData) => {
   try {
     const response = await axios.put(`${BASE_URL}/user-info`, formData, {
-      headers: { "Content-Type": "multipart/form-data", ...getAuthHeaders() },
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...getAuthHeaders(true),
+      },
     });
 
-    return response.data.data;
+    return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }

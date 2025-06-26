@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -39,7 +39,7 @@ import CancelDialog from "@/features/order/components/cancel-dialog";
 const ITEMS_PER_PAGE = 2;
 
 const OrderPage = () => {
-  const navigate = useNavigation();
+  const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
