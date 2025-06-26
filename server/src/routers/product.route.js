@@ -34,4 +34,18 @@ router.delete(
   productController.deleteProduct
 );
 
+router.post(
+  "/:id/reviews",
+  authenticateToken,
+  requireRole(["USER"]),
+  productController.addReview
+);
+
+router.put(
+  "/:productId/reviews/:reviewId",
+  authenticateToken,
+  requireRole(["USER"]),
+  productController.updateReview
+);
+
 module.exports = router;

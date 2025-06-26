@@ -52,7 +52,7 @@ exports.updateUserInfo = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Cập nhật thông tin thành công",
-      user: user.toObject(),
+      data: user.toObject(),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
