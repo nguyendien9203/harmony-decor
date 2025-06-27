@@ -17,6 +17,7 @@ import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
+import { getGoogleOAuthURL } from "@/utils/config";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -118,8 +119,8 @@ const LoginPage = () => {
             >
               Đăng nhập
             </Button>
-            <Button variant="outline" className="w-full rounded-full">
-              Đăng nhập với Google
+            <Button variant="outline" className="w-full rounded-full" asChild>
+              <a href={getGoogleOAuthURL()}>Đăng nhập với Google</a>
             </Button>
           </CardFooter>
         </form>
