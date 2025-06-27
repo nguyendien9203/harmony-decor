@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 
 exports.generateToken = (user) => {
-  const payload = { 
+  const payload = {
     userId: user._id,
-    roles: user.roles, 
+    roles: user.roles,
   };
   const secret = process.env.JWT_SECRET;
   const options = { expiresIn: "1h" }; // Token expires in 1 hour
