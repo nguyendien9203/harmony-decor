@@ -55,7 +55,14 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
-
+      {
+        path: "decor-3d",
+        element: (
+          <Suspense fallback={<FullscreenLoader />}>
+            <Lazy.Decor3DPage />  
+          </Suspense>
+        ),
+      },
       // Authentication routes
       {
         path: "login",
