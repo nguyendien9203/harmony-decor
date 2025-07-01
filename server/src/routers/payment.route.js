@@ -5,6 +5,31 @@ const {
   authenticateToken,
   requireRole,
 } = require("../middlewares/auth.middleware");
+const { syncTransaction } = require("../services/payment.service");
+
+// Generate payment QR code
+router.get(
+  "/generate-qr-code/:id",
+  authenticateToken,
+  requireRole(["USER", "ADMIN"]),
+  paymentController.generateQRCode
+);
+
+// Sync transactions
+router.post(
+  "/sync-transactions",
+  // authenticateToken,
+  // requireRole(["USER", "ADMIN"]),
+  syncTransaction
+);
+
+// Webhook handler for payment notifications
+router.post(
+  "/webhook-event-handler",
+  // authenticateToken,
+  // requireRole(["USER", "ADMIN"]),
+  paymentController.webhookHandler
+);
 
 // Create payment URL
 router.post(

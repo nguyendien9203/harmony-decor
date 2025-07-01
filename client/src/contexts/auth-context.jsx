@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }) => {
     return mergedUser;
   }, []);
 
+  // Email and password login
   const login = useCallback(
     async (email, password) => {
       const response = await performLogin(email, password);
@@ -84,6 +85,7 @@ export const AuthProvider = ({ children }) => {
         user,
         setUser,
         loading,
+        handleTokenResponse,
         login,
         verifyEmail,
         logout,

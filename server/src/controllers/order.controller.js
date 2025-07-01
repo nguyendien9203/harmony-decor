@@ -3,6 +3,7 @@ const Product = require("../models/product.model");
 const Discount = require("../models/discount.model");
 const { formatOrder } = require("../utils/format");
 const User = require("../models/user.model");
+const { sendOrderPaidEmail } = require("../config/email");
 
 // Create a new order (user)
 exports.createOrder = async (req, res) => {
@@ -18,6 +19,16 @@ exports.createOrder = async (req, res) => {
       note,
     } = req.body;
     const userId = req.user.userId;
+
+    // Validate paymentMethod
+    if (
+      !paymentMethod ||
+      !["CASH_ON_DELIVERY", "ONLINE_PAYMENT"].includes(paymentMethod)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Phương thức thanh toán không hợp lệ" });
+    }
 
     // Validate items
     if (!items || items.length === 0) {
@@ -83,7 +94,12 @@ exports.createOrder = async (req, res) => {
 
     const populatedOrder = await Order.findById(newOrder._id)
       .populate("items.productId", "name price images")
+      .populate("userId", "name email")
       .exec();
+
+    if (populatedOrder.paymentMethod === "CASH_ON_DELIVERY") {
+      await sendOrderPaidEmail(populatedOrder);
+    }
 
     res.status(201).json({
       status: 201,
@@ -180,7 +196,7 @@ exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("userId", "name email")
-      .populate("items.productId", "name price");
+      .populate("items.productId", "name price images");
     if (!order) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
@@ -192,7 +208,11 @@ exports.getOrderById = async (req, res) => {
     //     .status(403)
     //     .json({ message: "Bạn không có quyền truy cập đơn hàng này" });
     // }
-    res.json({ message: "Lấy chi tiết đơn hàng thành công", order });
+    res.json({
+      message: "Lấy chi tiết đơn hàng thành công",
+      order,
+      formatOrder: formatOrder(order),
+    });
   } catch (error) {
     res
       .status(500)
