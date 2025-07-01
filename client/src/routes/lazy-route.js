@@ -47,7 +47,9 @@ export const PrivacyPolicyPage = lazy(() =>
 export const TermsOfServicePage = lazy(() =>
   import("@/features/legal/pages/terms-of-service-page")
 );
-
+export const Decor3DPage = lazy(() =>
+  import("@/features/decor3d/pages/Decor3D")
+); 
 // Admin pages
 export const AdminDashboard = lazy(() =>
   import("@/features/admin/pages/admin-dashboard")
