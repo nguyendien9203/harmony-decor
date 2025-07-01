@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Logo from "@/assets/harmony-decor-logo.svg";
 import { Link, useNavigate } from "react-router-dom";
 import { getAccountMenuItems, NAVIGATION_MENU } from "@/constants/navigation";
-import { ShoppingBag, Menu } from "lucide-react";
+import { ShoppingBag, Menu, Lightbulb as BulbOutlined } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -70,6 +70,16 @@ const Header = () => {
         {/* Right Section: Cart and Menu Icons */}
         <div className="flex items-center space-x-3">
           <div className="relative">
+          <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={() => {
+                navigate("/decor-3d")
+              }}
+            >
+              <BulbOutlined className="w-5 h-5" />
+            </Button>
             <Button
               variant="outline"
               size="icon"

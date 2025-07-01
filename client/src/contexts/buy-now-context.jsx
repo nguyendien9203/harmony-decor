@@ -3,10 +3,23 @@ import { createContext, useContext, useState } from "react";
 const BuyNowContext = createContext();
 
 export const BuyNowProvider = ({ children }) => {
-  const [buyNowItem, setBuyNowItem] = useState(null);
+  const [buyNowItem, setBuyNowItemState] = useState(() => {
+    const savedItem = localStorage.getItem("buyNowItem");
+    return savedItem ? JSON.parse(savedItem) : null;
+  });
+
+  const setBuyNowItem = (item) => {
+    setBuyNowItemState(item);
+    if (item) {
+      localStorage.setItem("buyNowItem", JSON.stringify(item));
+    } else {
+      localStorage.removeItem("buyNowItem");
+    }
+  };
 
   const clearBuyNowItem = () => {
-    setBuyNowItem(null);
+    setBuyNowItemState(null);
+    localStorage.removeItem("buyNowItem");
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +24,11 @@ import {
   getWardsByDistrictId,
   validateDiscountCode,
 } from "@/features/checkout/checkout-service";
-import { createOrder } from "@/features/order/order-service";
-import { createPayment } from "@/features/payment/payment-service";
+import { createOrder, getOrderById } from "@/features/order/order-service";
+import {
+  generatePaymentQRCode,
+  //syncTransactions,
+} from "@/features/payment/payment-service";
 import { useCart } from "@/contexts/cart-context";
 import { useBuyNow } from "@/contexts/buy-now-context";
 
@@ -69,7 +72,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, clearCart } = useCart();
-  const { buyNowItem } = useBuyNow();
+  const { buyNowItem, clearBuyNowItem } = useBuyNow();
 
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -83,10 +86,16 @@ const CheckoutPage = () => {
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [qrCountdown, setQrCountdown] = useState(120); // 2 minutes countdown
+  const [currentOrderId, setCurrentOrderId] = useState("");
 
   const items = location.state?.items || [];
 
   const itemsToCheckout = buyNowItem ? [buyNowItem] : items;
+
+  const timerRef = useRef(null);
+  //const pollingRef = useRef(null);
 
   // Fetch provinces
   useEffect(() => {
@@ -177,6 +186,71 @@ const CheckoutPage = () => {
     }
   };
 
+  const refreshQrCode = useCallback(async () => {
+    if (!currentOrderId) return;
+
+    try {
+      const response = await generatePaymentQRCode(currentOrderId);
+      setQrCodeUrl(response.qrCodeUrl);
+      setQrCountdown(120); // reset về 2 phút
+    } catch (error) {
+      console.error("Error refreshing QR code:", error);
+      toast.error("Lỗi tạo lại mã QR");
+    }
+  }, [currentOrderId]);
+
+  useEffect(() => {
+    if (!qrCodeUrl) return;
+
+    clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setQrCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          refreshQrCode();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [qrCodeUrl, refreshQrCode]);
+
+  // Polling order status
+  // const startPollingOrder = useCallback(() => {
+  //   pollingRef.current = setInterval(async () => {
+  //     try {
+  //       await syncTransactions();
+  //     } catch (err) {
+  //       if (err.response?.status === 429) {
+  //         console.warn("Đang bị giới hạn. Tạm dừng polling 2 phút.");
+  //         clearInterval(pollingRef.current);
+  //         setTimeout(() => startPollingOrder(), 120000); // chờ 2 phút rồi restart
+  //       } else {
+  //         console.error("Lỗi sync:", err);
+  //       }
+  //     }
+  //   }, 90000); // mỗi 90 giây
+  // }, []);
+
+  useEffect(() => {
+    if (currentOrderId) {
+      (async () => {
+        const latestOrder = await getOrderById(currentOrderId);
+        if (
+          latestOrder.paymentMethod === "ONLINE_PAYMENT" &&
+          latestOrder.paymentStatus === "PAID"
+        ) {
+          clearCart();
+          clearBuyNowItem();
+          navigate(`/order-success?success=true&orderId=${currentOrderId}`);
+        }
+      })();
+    }
+  }, [currentOrderId, qrCodeUrl, navigate, clearCart, clearBuyNowItem]);
+
   const {
     register,
     handleSubmit,
@@ -225,27 +299,30 @@ const CheckoutPage = () => {
       const response = await createOrder(orderData);
       if (response.status === 201) {
         if (response.order.paymentMethod === "ONLINE_PAYMENT") {
-          const paymentResponse = await createPayment(
-            totalAmount,
+          setCurrentOrderId(response.order._id);
+          const qrCodeResponse = await generatePaymentQRCode(
             response.order._id
           );
-          if (paymentResponse.status === 200) {
-            window.location.href = paymentResponse.vnpUrl;
-          } else {
-            toast.error("Lỗi tạo thanh toán", {
-              description: paymentResponse.data.message || "Vui lòng thử lại.",
-            });
+          setQrCodeUrl(qrCodeResponse.qrCodeUrl);
+          setQrCountdown(120);
+          //startPollingOrder();
+          if (response.order.paymentStatus === "PAID") {
+            // If already paid, redirect to success page
+            clearCart();
+            clearBuyNowItem();
+            navigate(
+              `/order-success?success=true&orderId=${response.order._id}`
+            );
           }
         } else {
           // Redirect to order success page
           toast.success("Đặt hàng thành công!", {
             description: "Bạn sẽ nhận được email xác nhận đơn hàng.",
           });
-          navigate("/order-success", {
-            state: { order: response.order },
-          });
+          clearCart();
+          clearBuyNowItem();
+          navigate(`/order-success?success=true&orderId=${response.order._id}`);
         }
-        clearCart();
       }
     } catch (error) {
       toast.error("Lỗi đặt hàng", {
@@ -258,7 +335,7 @@ const CheckoutPage = () => {
     }
   };
 
-  if (loading) return <FullscreenLoader />;
+  if (loading || submitting) return <FullscreenLoader />;
 
   if (!buyNowItem && cart.length === 0) {
     return (
@@ -561,18 +638,40 @@ const CheckoutPage = () => {
                 </span>
               </div>
 
-              <div className="flex justify-between mt-4 w-full">
-                <Button
-                  variant="outline"
-                  className="w-auto border-none shadow-none"
-                  onClick={() => navigate(-1)}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Quay lại
-                </Button>
-                <Button type="submit" disabled={submitting} className="w-2/3">
-                  Đặt hàng
-                </Button>
+              <div className="flex flex-col items-center mt-4 w-full space-y-2">
+                {qrCodeUrl ? (
+                  <div className="flex flex-col items-center mt-4">
+                    <h3 className="text-lg font-semibold mb-2">
+                      Quét mã QR để thanh toán
+                    </h3>
+                    <img src={qrCodeUrl} alt="QR Code" className="w-full" />
+                    <p className="text-sm text-gray-500">
+                      Mã QR sẽ tự động làm mới sau:{" "}
+                      <span className="font-bold text-red-500">
+                        {String(Math.floor(qrCountdown / 60)).padStart(1, "0")}:
+                        {String(qrCountdown % 60).padStart(2, "0")}
+                      </span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex justify-between w-full">
+                    <Button
+                      variant="outline"
+                      className="w-auto border-none shadow-none"
+                      onClick={() => navigate(-1)}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Quay lại
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-2/3"
+                    >
+                      Đặt hàng
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
