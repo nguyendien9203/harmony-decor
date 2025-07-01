@@ -31,6 +31,18 @@ export const getMyOrders = async ({ status, page }) => {
   }
 };
 
+// Lấy đon hàng theo ID
+export const getOrderById = async (id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Huy động đơn hàng (chỉ dành cho CUSTOMER)
 export const cancelOrder = async (orderId) => {
   try {

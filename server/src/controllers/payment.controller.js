@@ -4,6 +4,209 @@ const moment = require("moment");
 const vnpay = require("../config/vnpay");
 const Order = require("../models/order.model");
 const { formatOrder } = require("../utils/format");
+const { generatePaymentQRCode } = require("../services/payment.service");
+const logger = require("../utils/logger");
+const { sendOrderPaidEmail } = require("../config/email");
+
+// Generate payment QR code (user)
+exports.generateQRCode = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const order = await Order.findById(orderId)
+      .populate("items.productId", "name images price")
+      .exec();
+
+    if (!order) {
+      return res.status(404).json({
+        status: 404,
+        message: "Đơn hàng không tồn tại",
+      });
+    }
+
+    if (order.paymentMethod !== "ONLINE_PAYMENT") {
+      return res.status(400).json({
+        status: 400,
+        message: "Đơn hàng không yêu cầu thanh toán trực tuyến",
+      });
+    }
+
+    const qrResponse = await generatePaymentQRCode(order);
+
+    if (!qrResponse || qrResponse.code !== "00") {
+      return res.status(500).json({
+        status: 500,
+        message: "Lỗi khi tạo QR code thanh toán",
+      });
+    }
+
+    res.status(200).json({
+      status: 200,
+      message: "Tạo QR code thanh toán thành công",
+      qrCodeUrl: qrResponse.data.qrDataURL,
+    });
+  } catch (error) {
+    res.status(500).json({ status: 500, message: error.message });
+  }
+};
+
+exports.webhookHandler = async (req, res) => {
+  try {
+    let error = req.body.error;
+    if (error != 0) {
+      return;
+    }
+    // 1. Check time response
+    const startTime = Date.now();
+
+    console.log("Webhook headers:", req.headers);
+    console.log("Webhook body:", req.body);
+
+    // 2. Check signature
+    // const signatureHeader = req.headers["x-casso-signature"];
+    // if (!signatureHeader) {
+    //   logger.error("Missing x-casso-signature header");
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Thiếu x-casso-signature trong header",
+    //   });
+    // }
+
+    // const parts = signatureHeader.split(",");
+
+    // const v1Part = parts.find((part) => part.trim().startsWith("v1="));
+
+    // const signature = v1Part ? v1Part.trim().substring(3) : null; // bỏ "v1="
+
+    // if (!signature) {
+    //   logger.error("No secure token v1 found in header");
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Thiếu secure token v1 trong header",
+    //   });
+    // }
+    const webhookData = req.body.data;
+    if (!webhookData || !webhookData.id || !webhookData.amount) {
+      logger.error("Data webhook invalid", req.body);
+      return res.status(400).json({
+        success: false,
+        message: "Dữ liệu webhook không hợp lệ",
+      });
+    }
+
+    // const secureToken = process.env.CASSO_SECURE_TOKEN;
+    // const payload = JSON.stringify(webhookData);
+    // const hmac = crypto
+    //   .createHmac("sha256", secureToken)
+    //   .update(payload)
+    //   .digest("hex");
+
+    // console.log("HMAC:", hmac);
+    // console.log("Signature:", signature);
+    // console.log("Secure Token:", secureToken);
+
+    // if (hmac !== signature) {
+    //   logger.error("Invalid signature");
+    //   return res
+    //     .status(403)
+    //     .json({ success: false, message: "Chữ ký không hợp lệ" });
+    // }
+    // 3. Check duplicate transaction
+    const { id, amount, description, transactionDateTime } = webhookData;
+    const existingTransaction = await Order.findOne({
+      transactionId: id,
+    });
+    if (existingTransaction) {
+      logger.warn(`Trancsaction ${id} was already processed`);
+      return res.status(200).json({
+        success: true,
+        message: "Giao dịch đã được xử lý trước đó",
+      });
+    }
+
+    // 4. Check order ID in description
+    const orderIdMatch = description.match(/Thanh toan don hang (\w+)/);
+    const orderId = orderIdMatch ? orderIdMatch[1] : null;
+    if (!orderId) {
+      logger.error("No order ID found in transaction description", description);
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy mã đơn hàng trong mô tả giao dịch",
+      });
+    }
+
+    // 5. Check order exists
+    const order = await Order.findById(orderId)
+      .populate("items.productId", "name images price")
+      .populate("userId", "email")
+      .exec();
+    if (!order) {
+      logger.error(`Order ${orderId} does not exist`);
+      return res.status(404).json({
+        success: false,
+        message: `Đơn hàng với ID ${orderId} không tồn tại`,
+      });
+    }
+
+    // Check amount and payment method
+    if (order.paymentMethod !== "ONLINE_PAYMENT") {
+      logger.error(`Order ${orderId} does not require online payment`);
+      return res.status(400).json({
+        success: false,
+        message: `Đơn hàng ${orderId} không yêu cầu thanh toán trực tuyến`,
+      });
+    }
+    if (order.totalAmount !== amount) {
+      logger.error(
+        `The amount does not match for order ${orderId}: expected ${order.totalAmount}, received ${amount}`
+      );
+      return res.status(400).json({
+        success: false,
+        message: `Số tiền không khớp cho đơn hàng ${orderId}: kỳ vọng ${order.totalAmount}, nhận ${amount}`,
+      });
+    }
+
+    // Check status
+    if (order.paymentStatus === "PAID" || order.paymentStatus === "CANCELLED") {
+      logger.warn(`Order ${orderId} has already been paid or cancelled`);
+      return res.status(200).json({
+        success: true,
+        message: `Đơn hàng ${orderId} đã được thanh toán hoặc hủy bỏ trước đó`,
+      });
+    }
+
+    // 6. Update order status
+    order.paymentStatus = "PAID";
+    order.paidAt = new Date(transactionDateTime);
+    order.transactionId = id;
+    order.orderStatus = "PROCESSING";
+    await order.save();
+
+    console.log("Order in paid: ", order);
+
+    // 7. Send email notification
+    await sendOrderPaidEmail(order);
+
+    //8. Response in 5 minutes
+    const processingTime = Date.now() - startTime;
+    if (processingTime > 4500) {
+      logger.warn(
+        `Webhook processing time exceeded 4.5 seconds: ${processingTime}ms`
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Webhook processed successfully",
+    });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi khi xử lý webhook",
+      error: error.message,
+    });
+  }
+};
 
 exports.createPaymentUrl = async (req, res) => {
   try {
