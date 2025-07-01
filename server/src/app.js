@@ -1,14 +1,22 @@
-require("dotenv").config();
+require("dotenv").config({ path: "./.env.local" || "./.env" });
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
+const morgan = require("morgan");
+
+const AuthRoute = require("./routers/auth.route");
+const UserRoute = require("./routers/user.route");
+const ProductRoute = require("./routers/product.route");
+const OrderRoute = require("./routers/order.route");
+const DiscountRoute = require("./routers/discount.route");
+const PaymentRoute = require("./routers/payment.route");
 
 const connectDB = require("./config/db");
 const { connectRedis } = require("./config/redis");
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -16,34 +24,44 @@ const app = express();
 connectDB();
 connectRedis();
 
-// Middleware
+// Security middleware
+app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   })
 );
-app.use(helmet());
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000, // 15m
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: "Too many requests, please try again later.",
-  })
-);
+app.set("trust proxy", 1); // trust first proxy for rate limiting
+app.use(morgan("dev"));
 app.use(express.json());
-app.use(cookieParser());
-app.use(mongoSanitize());
-app.use(xss());
+app.use(express.urlencoded({ extended: true }));
+// app.use(cookieParser());
+// app.use(mongoSanitize());
+// app.use(xss());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+app.use("/api/", limiter);
 
 // Routes
-app.get("/", (req, res) => {
-  res.send("Welcome to the API");
-});
+app.use("/api/auth", AuthRoute);
+app.use("/api/users", UserRoute);
+app.use("/api/products", ProductRoute);
+app.use("/api/discounts", DiscountRoute);
+app.use("/api/orders", OrderRoute);
+app.use("/api/payments", PaymentRoute);
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: "Not Found" });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 });
 
 module.exports = app;
