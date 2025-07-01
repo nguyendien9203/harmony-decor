@@ -123,13 +123,11 @@ exports.googleOauthHandler = async (req, res) => {
     const { id_token, access_token } = await authService.getGoogleTokens({
       code,
     });
-    console.log("Google OAuth tokens:", { id_token, access_token });
 
     const googleUser = await authService.getGoogleUser({
       id_token,
       access_token,
     });
-    console.log("Decoded Google user:", { googleUser });
 
     const { id, email, name, picture, verified_email } = googleUser;
 

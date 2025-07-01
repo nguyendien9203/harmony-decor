@@ -13,8 +13,6 @@ exports.getGoogleTokens = async ({ code }) => {
     grant_type: "authorization_code",
   };
 
-  console.log("Exchanging code for access token with values:", values);
-
   try {
     const response = await axios.post(url, qs.stringify(values), {
       headers: {
