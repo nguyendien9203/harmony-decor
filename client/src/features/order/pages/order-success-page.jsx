@@ -1,26 +1,61 @@
-import React, { useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { formatDateTime, formatCurrency } from "@/utils/format";
+import { getOrderById } from "@/features/order/order-service";
+import { FullscreenLoader } from "@/components/ui/fullscreen-loader";
 
 const OrderSuccessPage = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { state } = useLocation();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Check if the order state is available
+  const orderId = searchParams.get("orderId");
+  const success = searchParams.get("success");
+
+  console.log("Order ID:", orderId);
+  console.log("Success status:", success);
+
   useEffect(() => {
-    if (!state?.order) {
-      toast.error("Không có thông tin đơn hàng.");
+    if (success !== "true" || !orderId) {
+      toast.error("Thiếu thông tin đơn hàng");
       navigate("/");
+      return;
     }
-  }, [state, navigate]);
 
-  if (!state?.order) return null;
+    const fetchOrder = async () => {
+      try {
+        setLoading(true);
+        const orderData = await getOrderById(orderId);
+        setOrder(orderData.formatOrder);
+      } catch (error) {
+        console.error("Error fetching order:", error);
+        toast.error("Không thể lấy thông tin đơn hàng. Vui lòng thử lại sau.");
+        navigate("/");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const { order, transactionId } = state;
+    fetchOrder();
+  }, [orderId, success, navigate]);
+
+  if (loading) {
+    return <FullscreenLoader />;
+  }
+
+  if (!order) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Không tìm thấy đơn hàng.</p>
+      </div>
+    );
+  }
+
   const {
     items,
     total,
@@ -28,7 +63,12 @@ const OrderSuccessPage = () => {
     discountAmount,
     createdAt,
     paymentMethod,
+    transactionId,
   } = order;
+
+  if (loading) {
+    return <FullscreenLoader />;
+  }
 
   return (
     <div className="flex justify-center py-10 px-4">

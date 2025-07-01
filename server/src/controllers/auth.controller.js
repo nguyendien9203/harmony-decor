@@ -2,31 +2,49 @@ const User = require("../models/user.model");
 const { generateToken } = require("../config/jwt");
 const { sendOtpEmail, generateOtp } = require("../config/email");
 const { getRedisClient } = require("../config/redis");
+const logger = require("../utils/logger");
+const authService = require("../services/auth.service");
 
 // Register a new user
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    const isExisting = await User.findOne({ email });
-    if (isExisting) {
-      return res.status(400).json({
-        success: false,
-        message: "Email đã tồn tại",
+    const existingUser = await User.findOne({ email }).select("+password");
+    if (existingUser) {
+      if (existingUser.password) {
+        return res.status(400).json({
+          success: false,
+          message: "Email đã tồn tại.",
+        });
+      } else if (existingUser.oauthId && existingUser.oauthProvider) {
+        existingUser.phone = phone;
+        existingUser.password = password;
+        existingUser.verified = false;
+        await existingUser.save();
+
+        const otpCode = await generateOtp(email);
+        await sendOtpEmail(email, otpCode);
+
+        res.status(201).json({
+          success: true,
+          message:
+            "Đăng kí thành công. Vui lòng kiểm tra email để xác minh tài khoản.",
+        });
+      }
+    } else {
+      const user = new User({ name, email, password, phone, verified: false });
+      await user.save();
+
+      const otpCode = await generateOtp(email);
+      await sendOtpEmail(email, otpCode);
+
+      res.status(201).json({
+        success: true,
+        message:
+          "Đăng kí thành công. Vui lòng kiểm tra email để xác minh tài khoản.",
       });
     }
-
-    const otpCode = await generateOtp(email);
-    await sendOtpEmail(email, otpCode);
-
-    const user = new User({ name, email, password, phone });
-    await user.save();
-
-    res.status(201).json({
-      success: true,
-      message:
-        "Đăng kí thành công. Vui lòng kiểm tra email để xác minh tài khoản.",
-    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -44,7 +62,22 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Tài khoản không tồn tại",
+        message: "Email không tồn tại",
+      });
+    }
+
+    if (user.status !== "ACTIVE") {
+      return res.status(403).json({
+        status: 403,
+        message: "Tài khoản của bạn đã bị khóa",
+      });
+    }
+
+    if (!user.password && user.oauthId && user.oauthProvider) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Tài khoản này đăng ký bằng Google. Vui lòng đăng nhập bằng Google.",
       });
     }
 
@@ -67,14 +100,6 @@ exports.login = async (req, res) => {
       });
     }
 
-    if (user.status !== "ACTIVE") {
-      return res.status(403).json({
-        status: 403,
-        message:
-          "Tài khoản của bạn không hoạt động. Vui lòng liên hệ với quản trị viên.",
-      });
-    }
-
     const tokens = generateToken(user);
 
     res.status(200).json({
@@ -89,6 +114,85 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// OAuth2 Google login
+exports.googleOauthHandler = async (req, res) => {
+  try {
+    const code = req.query.code;
+
+    const { id_token, access_token } = await authService.getGoogleTokens({
+      code,
+    });
+
+    const googleUser = await authService.getGoogleUser({
+      id_token,
+      access_token,
+    });
+
+    const { id, email, name, picture, verified_email } = googleUser;
+
+    if (!verified_email) {
+      return res.status(400).json({
+        success: false,
+        message: "Tài khoản Google chưa được xác minh",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    logger.info("Existing user found:", {
+      email: existingUser ? existingUser : "No existing user",
+    });
+
+    if (existingUser) {
+      if (existingUser.status !== "ACTIVE") {
+        return res.status(403).json({
+          status: 403,
+          message: "Tài khoản của bạn đã bị khóa",
+        });
+      }
+
+      if (!existingUser.oauthId) {
+        existingUser.oauthId = id;
+        existingUser.oauthProvider = "GOOGLE";
+        await existingUser.save();
+      }
+
+      const tokens = generateToken(existingUser);
+      return res.redirect(
+        `${
+          process.env.CORS_ORIGIN
+        }/oauth-success?accessToken=${encodeURIComponent(tokens)}`
+      );
+    } else {
+      const newUser = new User({
+        name,
+        email,
+        oauthId: id,
+        oauthProvider: "GOOGLE",
+        avatar: picture,
+        verified: true,
+      });
+
+      await newUser.save();
+
+      const tokens = generateToken(newUser);
+      return res.redirect(
+        `${
+          process.env.CORS_ORIGIN
+        }/oauth-success?accessToken=${encodeURIComponent(tokens)}`
+      );
+    }
+  } catch (error) {
+    logger.error("Google OAuth error:", error);
+    res.redirect(
+      `${process.env.CORS_ORIGIN}/login?error=${encodeURIComponent(
+        error.message
+      )}`
+    );
+  }
+};
+
 // Send OTP to email for verification
 exports.sendVerificationEmail = async (req, res) => {
   try {

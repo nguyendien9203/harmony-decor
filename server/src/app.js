@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: "./.env.local" || "./.env" });
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -32,6 +32,7 @@ app.use(
     credentials: true,
   })
 );
+app.set("trust proxy", 1); // trust first proxy for rate limiting
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

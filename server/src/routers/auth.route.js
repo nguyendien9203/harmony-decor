@@ -86,4 +86,7 @@ router.post(
   authController.changePassword
 );
 
+// Google OAuth login
+router.get("/google", authController.googleOauthHandler);
+
 module.exports = router;

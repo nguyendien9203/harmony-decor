@@ -29,6 +29,9 @@ export const LoginPage = lazy(() => import("@/features/auth/pages/login-page"));
 export const RegisterPage = lazy(() =>
   import("@/features/auth/pages/register-page")
 );
+export const OauthSuccessPage = lazy(() =>
+  import("@/features/auth/pages/oauth-success-page")
+);
 export const VerifyPage = lazy(() =>
   import("@/features/auth/pages/verify-page")
 );

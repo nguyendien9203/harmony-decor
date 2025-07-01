@@ -73,6 +73,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "oauth-success",
+        element: (
+          <Suspense fallback={<FullscreenLoader />}>
+            <Lazy.OauthSuccessPage />
+          </Suspense>
+        ),
+      },
+      {
         path: "register",
         element: (
           <Suspense fallback={<FullscreenLoader />}>
