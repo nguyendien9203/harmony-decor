@@ -6,7 +6,7 @@ const Order = require("../models/order.model");
 const { formatOrder } = require("../utils/format");
 const { generatePaymentQRCode } = require("../services/payment.service");
 const logger = require("../utils/logger");
-const { sendOrderPaidEmail } = require("../config/email");
+const { sendOrderSuccessEmail } = require("../config/email");
 
 // Generate payment QR code (user)
 exports.generateQRCode = async (req, res) => {
@@ -184,7 +184,7 @@ exports.webhookHandler = async (req, res) => {
     console.log("Order in paid: ", order);
 
     // 7. Send email notification
-    await sendOrderPaidEmail(order);
+    await sendOrderSuccessEmail(order);
 
     //8. Response in 5 minutes
     const processingTime = Date.now() - startTime;

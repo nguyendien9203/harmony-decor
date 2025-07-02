@@ -109,7 +109,7 @@ exports.getProductBySlug = async (req, res) => {
     const slug = req.params.slug;
     const product = await Product.findOne({ slug: slug }).populate(
       "reviews.userId",
-      "name images"
+      "name avatar"
     );
     if (!product)
       return res
