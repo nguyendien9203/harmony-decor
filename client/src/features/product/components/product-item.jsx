@@ -51,7 +51,7 @@ export default function ProductItem({ product }) {
         </Badge>
       )}
 
-      <div className="flex items-center justify-between px-3 py-3">
+      <div className="flex items-start justify-between px-3 py-3">
         <div className="bg-white px-3 py-1 text-sm font-medium">
           <p>{name}</p>
           <p className="text-gray-500 text-xs">{formatCurrency(price)}</p>
