@@ -3,7 +3,10 @@ const Product = require("../models/product.model");
 const Discount = require("../models/discount.model");
 const { formatOrder } = require("../utils/format");
 const User = require("../models/user.model");
-const { sendOrderPaidEmail } = require("../config/email");
+const {
+  sendOrderSuccessEmail,
+  sendOrderCancelledEmail,
+} = require("../config/email");
 
 // Create a new order (user)
 exports.createOrder = async (req, res) => {
@@ -98,7 +101,7 @@ exports.createOrder = async (req, res) => {
       .exec();
 
     if (populatedOrder.paymentMethod === "CASH_ON_DELIVERY") {
-      await sendOrderPaidEmail(populatedOrder);
+      await sendOrderSuccessEmail(populatedOrder);
     }
 
     res.status(201).json({
@@ -270,6 +273,7 @@ exports.cancelOrder = async (req, res) => {
 
     order.orderStatus = "CANCELLED";
     await order.save();
+    await sendOrderCancelledEmail(order);
     res.json({ message: "Hủy đơn hàng thành công", order });
   } catch (error) {
     res

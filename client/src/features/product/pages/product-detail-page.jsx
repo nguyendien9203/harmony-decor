@@ -280,7 +280,7 @@ const ProductDetailPage = () => {
       </div>
       {/* Danh sách đánh giá */}
       <div className="space-y-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-700">Mô tả sản phẩm</h2>
+        <h2 className="text-lg font-semibold text-gray-700 mt-4">Đánh giá</h2>
         {product.reviews?.length === 0 ? (
           <p className="text-gray-500">
             Chưa có đánh giá nào cho sản phẩm này.

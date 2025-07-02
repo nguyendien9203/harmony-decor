@@ -71,10 +71,10 @@ exports.sendOtpEmail = async (email, otpCode) => {
   }
 };
 
-exports.sendOrderPaidEmail = async (order) => {
+exports.sendOrderSuccessEmail = async (order) => {
   const htmlContent = `
     <p>Xin chào,</p>
-    <p>Chúng tôi xin thông báo rằng đơn hàng của bạn đã được thanh toán thành công.</p>
+    <p>Chúng tôi xin thông báo rằng đơn hàng của bạn đã đặt hàng thành công.</p>
     <p><strong>Mã đơn hàng:</strong> ${order._id}</p>
     <p><strong>Tổng số tiền:</strong> ${order.totalAmount} VNĐ</p>
     <p>Cảm ơn bạn đã mua sắm tại Harmony Decor!</p>
@@ -91,6 +91,81 @@ exports.sendOrderPaidEmail = async (order) => {
     return { success: true, message: "Email xác nhận thanh toán đã được gửi" };
   } catch (error) {
     console.error("Failed to send order paid email:", error);
+    throw error;
+  }
+};
+
+exports.sendOrderShippedEmail = async (order) => {
+  const htmlContent = `
+    <p>Xin chào,</p>
+    <p>Chúng tôi xin thông báo rằng đơn hàng của bạn đã được vận chuyển.</p>
+    <p><strong>Mã đơn hàng:</strong> ${order._id}</p>
+    <p><strong>Tổng số tiền:</strong> ${order.totalAmount} VNĐ</p>
+    <p>Cảm ơn bạn đã mua sắm tại Harmony Decor!</p>
+    <p>Trân trọng,<br/>Đội ngũ Hỗ trợ Khách hàng</p>
+  `;
+
+  try {
+    await this.sendEmail(
+      order.userId.email,
+      "Thông báo vận chuyển đơn hàng",
+      htmlContent
+    );
+
+    return { success: true, message: "Email thông báo vận chuyển đã được gửi" };
+  } catch (error) {
+    console.error("Failed to send order shipped email:", error);
+    throw error;
+  }
+};
+
+exports.sendOrderDeliveredEmail = async (order) => {
+  const htmlContent = `
+    <p>Xin chào,</p>
+    <p>Chúng tôi xin thông báo rằng đơn hàng của bạn đã được giao thành công.</p>
+    <p><strong>Mã đơn hàng:</strong> ${order._id}</p>
+    <p><strong>Tổng số tiền:</strong> ${order.totalAmount} VNĐ</p>
+    <p>Cảm ơn bạn đã mua sắm tại Harmony Decor!</p>
+    <p>Trân trọng,<br/>Đội ngũ Hỗ trợ Khách hàng</p>
+  `;
+
+  try {
+    await this.sendEmail(
+      order.userId.email,
+      "Thông báo giao hàng thành công",
+      htmlContent
+    );
+
+    return { success: true, message: "Email thông báo giao hàng đã được gửi" };
+  } catch (error) {
+    console.error("Failed to send order delivered email:", error);
+    throw error;
+  }
+};
+
+exports.sendOrderCancelledEmail = async (order) => {
+  const htmlContent = `
+    <p>Xin chào,</p>
+    <p>Chúng tôi xin thông báo rằng đơn hàng của bạn đã bị hủy.</p>
+    <p><strong>Mã đơn hàng:</strong> ${order._id}</p>
+    <p><strong>Tổng số tiền:</strong> ${order.totalAmount} VNĐ</p>
+    <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
+    <p>Trân trọng,<br/>Đội ngũ Hỗ trợ Khách hàng</p>
+  `;
+
+  try {
+    await this.sendEmail(
+      order.userId.email,
+      "Thông báo hủy đơn hàng",
+      htmlContent
+    );
+
+    return {
+      success: true,
+      message: "Email thông báo hủy đơn hàng đã được gửi",
+    };
+  } catch (error) {
+    console.error("Failed to send order cancelled email:", error);
     throw error;
   }
 };
