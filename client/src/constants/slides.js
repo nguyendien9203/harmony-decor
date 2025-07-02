@@ -13,7 +13,8 @@ export const SLIDERS = [
   },
 
   {
-    sectionId: "3d-review",
+    path: "/decor-3d",
+    sectionId: "decor-3d",
     image: slider2,
     title: "Mô Hình Bàn Học 3D",
     description:

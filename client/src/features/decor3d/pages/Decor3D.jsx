@@ -5,6 +5,7 @@ import CanvasScene from "./CanvasScene";
 const Decor3D = () => {
   return (
     <div
+      id="decor-3d"
       style={{
         display: "flex",
         flexDirection: "row",

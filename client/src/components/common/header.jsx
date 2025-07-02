@@ -70,20 +70,21 @@ const Header = () => {
         {/* Right Section: Cart and Menu Icons */}
         <div className="flex items-center space-x-3">
           <div className="relative">
-          <Button
+            <Button
               variant="outline"
               size="icon"
               className="rounded-full"
               onClick={() => {
-                navigate("/decor-3d")
+                navigate("/decor-3d");
               }}
+              alt="3D Decor"
             >
               <BulbOutlined className="w-5 h-5" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full"
+              className="rounded-full ml-3"
               onClick={() => navigate("/cart")}
             >
               <ShoppingBag className="w-5 h-5" />
