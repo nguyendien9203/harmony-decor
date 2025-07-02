@@ -24,22 +24,11 @@ const app = express();
 connectDB();
 connectRedis();
 
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split("|").map((origin) => origin.trim())
-  : [];
-
 // Security middleware
 app.use(helmet());
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Nếu không có origin (ví dụ request server -> server) hoặc nằm trong danh sách cho phép
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS policy: Not allowed for origin ${origin}`));
-      }
-    },
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
   })
 );
