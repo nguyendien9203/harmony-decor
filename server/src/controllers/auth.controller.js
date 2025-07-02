@@ -119,19 +119,35 @@ exports.login = async (req, res) => {
 exports.googleOauthHandler = async (req, res) => {
   try {
     const code = req.query.code;
+    console.log("Received OAuth code", { code });
+
+    if (!code) {
+      console.error("No code provided in OAuth callback");
+      return res.redirect(
+        `${process.env.CORS_ORIGIN}/login?error=${encodeURIComponent(
+          "No code provided"
+        )}`
+      );
+    }
 
     const { id_token, access_token } = await authService.getGoogleTokens({
       code,
+    });
+    console.log("Received Google tokens", {
+      id_token: id_token ? id_token.slice(0, 10) + "..." : null,
+      access_token: access_token ? access_token.slice(0, 10) + "..." : null,
     });
 
     const googleUser = await authService.getGoogleUser({
       id_token,
       access_token,
     });
+    console.log("Google user info", googleUser);
 
     const { id, email, name, picture, verified_email } = googleUser;
 
     if (!verified_email) {
+      console.log("Google account not verified", { email });
       return res.status(400).json({
         success: false,
         message: "Tài khoản Google chưa được xác minh",
@@ -140,11 +156,11 @@ exports.googleOauthHandler = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
 
-    logger.info("Existing user found:", {
-      email: existingUser ? existingUser : "No existing user",
-    });
-
     if (existingUser) {
+      console.log("Existing user found", {
+        email,
+        status: existingUser.status,
+      });
       if (existingUser.status !== "ACTIVE") {
         return res.status(403).json({
           status: 403,
@@ -153,18 +169,22 @@ exports.googleOauthHandler = async (req, res) => {
       }
 
       if (!existingUser.oauthId) {
+        console.log("Linking existing user to Google", { email });
         existingUser.oauthId = id;
         existingUser.oauthProvider = "GOOGLE";
         await existingUser.save();
       }
 
       const tokens = generateToken(existingUser);
+      console.log("Generated tokens for existing user", { email });
+      console.log("Tokens generated successfully", { tokens });
       return res.redirect(
         `${
           process.env.CORS_ORIGIN
         }/oauth-success?accessToken=${encodeURIComponent(tokens)}`
       );
     } else {
+      console.log("Creating new user", { email });
       const newUser = new User({
         name,
         email,
@@ -177,6 +197,9 @@ exports.googleOauthHandler = async (req, res) => {
       await newUser.save();
 
       const tokens = generateToken(newUser);
+      console.log("Generated tokens for new user", { email });
+      console.log("Tokens generated successfully", { tokens });
+
       return res.redirect(
         `${
           process.env.CORS_ORIGIN
@@ -184,7 +207,7 @@ exports.googleOauthHandler = async (req, res) => {
       );
     }
   } catch (error) {
-    logger.error("Google OAuth error:", error);
+    console.error("Google OAuth error:", error);
     res.redirect(
       `${process.env.CORS_ORIGIN}/login?error=${encodeURIComponent(
         error.message
